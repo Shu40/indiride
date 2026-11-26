@@ -305,6 +305,17 @@ ${JSON.stringify(masterSeoSchema, null, 2)}
   fs.writeFileSync(indexHtmlPath, html, 'utf8');
   fs.writeFileSync(twoHundredPath, html, 'utf8');
   fs.writeFileSync(redirectsPath, '/*    /index.html   200\n', 'utf8');
+
+  // Vercel SPA rewrites configuration
+  const vercelJsonPath = path.join(distDir, 'vercel.json');
+  fs.writeFileSync(vercelJsonPath, JSON.stringify({
+    version: 2,
+    routes: [
+      { handle: "filesystem" },
+      { src: "/.*", dest: "/index.html" }
+    ]
+  }, null, 2), 'utf8');
+  console.log('[fix-web-export] Successfully created vercel.json with SPA rewrites.');
   console.log('[fix-web-export] Successfully injected masterclass SEO tags, Schema.org graph, and semantic crawler HTML.');
 }
 
