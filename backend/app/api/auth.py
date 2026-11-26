@@ -243,6 +243,52 @@ def register(request: UserRegisterRequest, db: Session = Depends(get_db)):
         )
 
 
+@router.post("/driver/voice-verify")
+def record_voice_verification(
+    request: dict,
+    db: Session = Depends(get_db)
+):
+    """
+    Records the response of the automated AI voice verification call.
+    Digits:
+      '1': Confirmed permanent resident / served university location
+      '2': Change requested for university / city
+      '3': Customer support requested
+    """
+    phone_number = request.get("phone_number")
+    digit = str(request.get("digit", "")).strip()
+    university = request.get("university", "")
+
+    if not phone_number:
+        raise HTTPException(status_code=400, detail="phone_number is required")
+
+    user = db.query(User).filter(User.phone_number == phone_number).first()
+    if not user or not user.rider_profile:
+        raise HTTPException(status_code=404, detail="Rider profile not found")
+
+    prof = user.rider_profile
+    if digit == "1":
+        prof.voice_verification_status = "CONFIRMED_PERMANENT"
+        prof.voice_verified_at = datetime.utcnow()
+        message = "Location successfully verified by AI Voice Assistant"
+    elif digit == "2":
+        prof.voice_verification_status = "CHANGE_REQUESTED"
+        message = "Location change requested by driver"
+    elif digit == "3":
+        prof.voice_verification_status = "SUPPORT_REQUESTED"
+        message = "Customer support call transfer requested"
+    else:
+        prof.voice_verification_status = "UNVERIFIED"
+        message = "Invalid voice verification response"
+
+    db.commit()
+    return {
+        "success": True,
+        "status": prof.voice_verification_status,
+        "message": message
+    }
+
+
 @router.post("/demo-login/{role}", response_model=TokenResponse)
 def demo_login(role: str, db: Session = Depends(get_db)):
     """Logs in as an authorized user. Strictly disabled in production."""

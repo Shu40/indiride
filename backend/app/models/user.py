@@ -109,6 +109,8 @@ class RiderProfile(Base):
     permanent_address = Column(String(300), nullable=True)
     current_address = Column(String(300), nullable=True)
     rejection_reason = Column(String(300), nullable=True)
+    voice_verification_status = Column(String(50), default="UNVERIFIED", nullable=True) # UNVERIFIED, CONFIRMED_PERMANENT, CHANGE_REQUESTED
+    voice_verified_at = Column(DateTime, nullable=True)
     submitted_at = Column(DateTime, default=datetime.utcnow)
     verified_at = Column(DateTime, nullable=True)
 

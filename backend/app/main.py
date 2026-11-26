@@ -479,6 +479,8 @@ def auto_migrate_sqlite(engine):
                 ("aadhaar_photo", "TEXT"),
                 ("driver_state", "VARCHAR(100)"),
                 ("driver_city", "VARCHAR(100)"),
+                ("voice_verification_status", "VARCHAR(50)"),
+                ("voice_verified_at", "DATETIME"),
                 ("rejection_reason", "VARCHAR(300)"),
                 ("submitted_at", "DATETIME"),
                 ("verified_at", "DATETIME"),

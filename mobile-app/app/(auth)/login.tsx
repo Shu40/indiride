@@ -27,6 +27,7 @@ import { FounderStoryModal } from '../../src/components/FounderStoryModal';
 import { PlayStoreComingSoonModal } from '../../src/components/PlayStoreComingSoonModal';
 import { InstitutionMultiSelectModal } from '../../src/components/campus/InstitutionMultiSelectModal';
 import { PendingDriverApprovalModal } from '../../src/components/PendingDriverApprovalModal';
+import { AIVoiceCallVerificationModal } from '../../src/components/AIVoiceCallVerificationModal';
 import { INDIAN_STATES_CITIES } from '../../src/data/indianLocations';
 
 export default function LoginScreen() {
@@ -79,6 +80,7 @@ export default function LoginScreen() {
   const [aadhaarNumber, setAadhaarNumber] = useState('');
   const [aadhaarPhoto, setAadhaarPhoto] = useState<string>('');
   const [showPendingModal, setShowPendingModal] = useState<boolean>(false);
+  const [showVoiceCallModal, setShowVoiceCallModal] = useState<boolean>(false);
   const [pendingNoticeData, setPendingNoticeData] = useState<any>(null);
 
   const handlePickDocument = (type: 'driver_photo' | 'passport' | 'license' | 'pan' | 'aadhaar' | 'student_id') => {
@@ -483,8 +485,10 @@ export default function LoginScreen() {
           state: driverState,
           city: driverCity,
           submittedAt: new Date().toISOString(),
+          voiceVerified: false,
         });
-        setShowPendingModal(true);
+        // TRIGGER IN-APP AI VOICE VERIFICATION CALL!
+        setShowVoiceCallModal(true);
       } else {
         redirectByRole(regResp.user.role);
       }
@@ -2241,6 +2245,51 @@ export default function LoginScreen() {
         }}
         title={`${driverCity || driverState || 'Campus'} Universities & Colleges`}
         subtitle="Select all institutions you want to serve as an IndiRide driver partner"
+      />
+
+      {/* Automated AI Voice Verification Outbound Call Modal */}
+      <AIVoiceCallVerificationModal
+        visible={showVoiceCallModal}
+        driverName={fullName}
+        universityName={servedUniversities || collegeName || 'Gujarat Campus Hub'}
+        cityName={driverCity || 'Aapka Area'}
+        stateName={driverState}
+        onOption1Confirmed={async () => {
+          setShowVoiceCallModal(false);
+          const fullPhone = getFullPhoneNumber();
+          try {
+            await api.auth.recordVoiceVerification(fullPhone, '1', servedUniversities || collegeName);
+          } catch {}
+          setPendingNoticeData((prev: any) => ({
+            ...prev,
+            voiceVerified: true,
+          }));
+          setShowPendingModal(true);
+        }}
+        onOption2EditRequested={async () => {
+          setShowVoiceCallModal(false);
+          const fullPhone = getFullPhoneNumber();
+          try {
+            await api.auth.recordVoiceVerification(fullPhone, '2', servedUniversities || collegeName);
+          } catch {}
+          // Return to name_entry so driver can change State/City/University
+          setViewMode('name_entry');
+        }}
+        onOption3SupportRequested={async () => {
+          setShowVoiceCallModal(false);
+          const fullPhone = getFullPhoneNumber();
+          try {
+            await api.auth.recordVoiceVerification(fullPhone, '3', servedUniversities || collegeName);
+          } catch {}
+          if (Platform.OS === 'web' && typeof window !== 'undefined') {
+            window.location.href = 'tel:+918888888888';
+          }
+          setShowPendingModal(true);
+        }}
+        onClose={() => {
+          setShowVoiceCallModal(false);
+          setShowPendingModal(true);
+        }}
       />
 
       {/* 7-Day Wait Pending Driver Approval Modal */}

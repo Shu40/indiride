@@ -21,6 +21,7 @@ interface PendingDriverApprovalModalProps {
     license?: string;
     vehiclePlate?: string;
     submittedAt?: string;
+    voiceVerified?: boolean;
   } | null;
 }
 
@@ -92,6 +93,15 @@ export const PendingDriverApprovalModal: React.FC<PendingDriverApprovalModalProp
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Vehicle Plate:</Text>
                 <Text style={styles.summaryValue}>{driverData.vehiclePlate}</Text>
+              </View>
+            ) : null}
+
+            {driverData?.voiceVerified ? (
+              <View style={[styles.summaryRow, { backgroundColor: '#f0fdf4', paddingHorizontal: 8, borderRadius: 8, marginVertical: 4 }]}>
+                <Text style={[styles.summaryLabel, { color: '#166534', fontWeight: '800' }]}>AI Voice Verification:</Text>
+                <Text style={[styles.summaryValue, { color: '#15803d', fontWeight: '800' }]}>
+                  ✅ Location Confirmed (Option 1)
+                </Text>
               </View>
             ) : null}
 

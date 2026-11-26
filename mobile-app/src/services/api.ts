@@ -170,6 +170,12 @@ export const api = {
         body: JSON.stringify(payload),
       }),
 
+    recordVoiceVerification: (phone_number: string, digit: string, university?: string) =>
+      apiRequest<{ success: boolean; status: string; message: string }>('/auth/driver/voice-verify', {
+        method: 'POST',
+        body: JSON.stringify({ phone_number, digit, university }),
+      }),
+
     login: (phone_number: string, password?: string, otp?: string) =>
       apiRequest<{ access_token: string; refresh_token: string; user: User }>('/auth/login', {
         method: 'POST',
