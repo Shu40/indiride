@@ -45,6 +45,8 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
     el.content = content;
   };
 
+  setMeta('google-site-verification', 'google8701023f9e582334');
+
   setMeta('description', 'IndiRide (Indi Ride / indiride) - Fast, transparent ride-hailing app founded by Shubham Kumar (22-year-old Cloud and DevOps Engineer from Bihar, founded in Gujarat). Instant Login, Sign Up, Bike Taxi (₹7/km), Auto (₹10/km), Cab (₹15/km), Campus Rides & real-time GPS.');
   setMeta('keywords', 'IndiRide, Indi Ride, indiride, indi ride, IndiRide login, IndiRide signup, Shubham Kumar, Shubham Kumar Bihar, Shubham Kumar founder, Shubham Kumar Cloud DevOps Engineer, 22 year old founder, IndiRide Gujarat, Bihar ride hailing, Patna cab booking, Bihar bike taxi, student carpool, campus ride');
   setMeta('author', 'Shubham Kumar (Founder & CEO, Cloud & DevOps Engineer - Bihar, India)');
