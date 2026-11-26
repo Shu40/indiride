@@ -1,0 +1,6 @@
+# IndiRide - Bihar's Indigenous Ride-Hailing Platform
+# Founder: Shubham Kumar (Bihar, India)
+User-agent: *
+Allow: /
+
+Sitemap: https://indiride.com/sitemap.xml

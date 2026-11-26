@@ -1,0 +1,53 @@
+services:
+  # 1. IndiRide Backend API (FastAPI + Real-time WebSockets)
+  - type: web
+    name: indiride-api
+    runtime: python
+    region: singapore
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2
+    envVars:
+      - key: PROJECT_NAME
+        value: IndiRide
+      - key: FOUNDER_NAME
+        value: Shubham Kumar
+      - key: FOUNDER_LOCATION
+        value: Bihar, India
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: API_V1_STR
+        value: /api
+      - key: JWT_SECRET
+        value: b63c7b80a4f5d178e24c538e1b34ad2689c47012d4d9c73efb2512a8039c2947
+      - key: DATABASE_URL
+        value: postgresql://postgres:Shubham%40%23%242004@db.pfllpbmykaesyfbygbam.supabase.co:5432/postgres?sslmode=require
+      - key: REDIS_URL
+        value: rediss://default:gQAAAAAAAiwOAAIgcDFmMTA5NjVhYjZhM2M0NzdiOTc1ZjNjYjc5ZGIyYzVjZQ@trusty-stallion-142350.upstash.io:6379
+      - key: SMS_PROVIDER
+        value: cascade
+      - key: TWOFACTOR_API_KEY
+        value: e2b14146-caa9-11f1-ac3e-0200cd936042
+      - key: INITIAL_MATCHING_RADIUS_KM
+        value: 2.0
+      - key: DEFAULT_BIKE_RATE_PER_KM
+        value: 7.0
+      - key: DEFAULT_CAR_RATE_PER_KM
+        value: 15.0
+
+  # 2. IndiRide Web Frontend (React Native / Expo Web)
+  - type: static
+    name: indiride-web
+    runtime: static
+    region: singapore
+    plan: free
+    rootDir: mobile-app
+    buildCommand: npm install && npx expo export -p web
+    publishDir: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

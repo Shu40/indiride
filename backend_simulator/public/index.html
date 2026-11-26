@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Uber & Ola Live Ride Booking (India Region)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Leaflet CSS & JS (Official OpenStreetMap - No API Key, Clean & Crisp) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <style>
+    :root {
+      --uber-black: #000000;
+      --uber-dark: #121212;
+      --uber-surface: #1E1E1E;
+      --uber-elevated: #262626;
+      --uber-border: #333333;
+      --uber-blue: #276EF1;
+      --ola-green: #00D26A;
+      --hightrip-purple: #7C3AED;
+      --accent-gold: #F59E0B;
+      --danger: #EF4444;
+      --text-primary: #FFFFFF;
+      --text-secondary: #A0A0A0;
+      --text-muted: #6E6E6E;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--uber-black);
+      color: var(--text-primary);
+      height: 100vh;
+      width: 100vw;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation Bar */
+    .top-navbar {
+      height: 64px;
+      background: #000000;
+      border-bottom: 1px solid var(--uber-border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 1000;
+      flex-shrink: 0;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .brand-logo {
+      background: #FFFFFF;
+      color: #000000;
+      font-weight: 900;
+      font-size: 18px;
+      padding: 4px 12px;
+      border-radius: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ola-green);
+      background: rgba(0, 210, 106, 0.12);
+      border: 1px solid rgba(0, 210, 106, 0.3);
+      padding: 4px 10px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--ola-green);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--ola-green);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 0.8; }
+      50% { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.8; }
+    }
+
+    .btn {
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 10px 18px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+
+    .btn-captain {
+      background: linear-gradient(135deg, #10B981, #059669);
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-secondary {
+      background: var(--uber-surface);
+      color: #FFFFFF;
+      border: 1px solid var(--uber-border);
+    }
+
+    /* =========================================================
+       SCREEN 1: INITIAL BOOKING HOME SCREEN (NO MAP INITIALLY)
+       ========================================================= */
+    #bookingHomeScreen {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: radial-gradient(circle at 50% 20%, #1A1A1A 0%, #000000 70%);
+      overflow-y: auto;
+    }
+
+    .booking-card-main {
+      width: 530px;
+      max-width: 100%;
+      background: rgba(22, 22, 22, 0.95);
+      border: 1px solid var(--uber-border);
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+    }
+
+    .booking-hero-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .booking-hero-header h2 {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+
+    /* Mode Pills (Instant vs HighTrip) */
+    .mode-pills {
+      display: flex;
+      background: #000;
+      border: 1px solid var(--uber-border);
+      border-radius: 14px;
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .mode-pill-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .mode-pill-btn.active {
+      background: #FFFFFF;
+      color: #000000;
+    }
+
+    .mode-pill-btn.active.hightrip-mode {
+      background: linear-gradient(135deg, var(--hightrip-purple), #2563EB);
+      color: #FFFFFF;
+    }
+
+    /* Location Input Group with Autocomplete */
+    .location-card-container {
+      background: var(--uber-surface);
+      border: 1px solid var(--uber-border);
+      border-radius: 20px;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+    }
+
+    .loc-field-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+    }
+
+    .loc-icon-bullet {
+      font-size: 15px;
+      width: 18px;
+      text-align: center;
+    }
+
+    .loc-text-input {
+      flex: 1;
+      position: relative;
+    }
+
+    .loc-header-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+
+    .loc-header-line label {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .badge-btn-live-gps {
+      background: rgba(0, 210, 106, 0.15);
+      border: 1px solid var(--ola-green);
+      color: var(--ola-green);
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+
+    .badge-btn-live-gps:hover {
+      background: var(--ola-green);
+      color: #000;
+    }
+
+    .badge-btn-adjust-map {
+      background: rgba(39, 110, 241, 0.15);
+      border: 1px solid var(--uber-blue);
+      color: #60A5FA;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+
+    .badge-btn-adjust-map:hover {
+      background: var(--uber-blue);
+      color: #FFF;
+    }
+
+    .loc-text-input input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: #FFFFFF;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      outline: none;
+    }
+
+    .loc-divider-line {
+      height: 1px;
+      background: var(--uber-border);
+      margin-left: 30px;
+    }
+
+    /* Autocomplete Suggestions Dropdown */
+    .autocomplete-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #1A1D27;
+      border: 1px solid #383F54;
+      border-radius: 16px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.95);
+      z-index: 2000;
+      max-height: 240px;
+      overflow-y: auto;
+      display: none;
+      margin-top: 8px;
+    }
+
+    .autocomplete-list.active { display: block; }
+
+    .ac-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid #282E42;
+      cursor: pointer;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      transition: background 0.15s;
+    }
+
+    .ac-item:hover { background: #262D42; }
+
+    .ac-item i {
+      color: var(--ola-green);
+      font-size: 14px;
+      margin-top: 2px;
+    }
+
+    .ac-main-name {
+      font-size: 13px;
+      font-weight: 800;
+      color: #FFFFFF;
+    }
+
+    .ac-sub-address {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    /* Vehicle Options Selection */
+    .vehicle-fleet-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .vehicle-option-tile {
+      background: var(--uber-surface);
+      border: 1.5px solid var(--uber-border);
+      border-radius: 18px;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .vehicle-option-tile:hover {
+      background: #252525;
+      border-color: #555;
+    }
+
+    .vehicle-option-tile.selected {
+      background: #222222;
+      border-color: #FFFFFF;
+      box-shadow: 0 0 0 1px #FFFFFF, 0 8px 24px rgba(0,0,0,0.5);
+    }
+
+    .veh-info-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .veh-icon-box {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: #000;
+      border: 1px solid var(--uber-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .veh-texts h4 {
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .veh-texts p {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .veh-price-right {
+      text-align: right;
+    }
+
+    .veh-price-right .price {
+      font-size: 18px;
+      font-weight: 900;
+      color: #FFFFFF;
+    }
+
+    .veh-price-right .eta {
+      font-size: 11px;
+      color: var(--ola-green);
+      font-weight: 700;
+    }
+
+    /* Main CTA Confirm Button */
+    .btn-confirm-ride {
+      width: 100%;
+      background: #FFFFFF;
+      color: #000000;
+      font-size: 16px;
+      font-weight: 900;
+      padding: 16px;
+      border-radius: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      border: none;
+      transition: all 0.2s;
+      box-shadow: 0 10px 25px rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-confirm-ride:hover {
+      background: #EDEDED;
+      transform: scale(1.01);
+    }
+
+    /* =========================================================
+       MODAL: ADJUST DROP / PICKUP ON MAP MODAL
+       ========================================================= */
+    .map-modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 3000;
+    }
+
+    .map-modal-backdrop.active { display: flex; }
+
+    .map-modal-box {
+      width: 800px;
+      max-width: 95vw;
+      height: 560px;
+      background: #181818;
+      border: 1px solid var(--uber-border);
+      border-radius: 24px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.9);
+    }
+
+    .map-modal-header {
+      padding: 14px 20px;
+      background: #141414;
+      border-bottom: 1px solid var(--uber-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #adjustPickerMap {
+      flex: 1;
+      width: 100%;
+      background: #0E121E;
+    }
+
+    .map-modal-footer {
+      padding: 14px 20px;
+      background: #141414;
+      border-top: 1px solid var(--uber-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* =========================================================
+       SCREEN 2: RIDE CONFIRMED FULL MAP & TRACKING SCREEN
+       ========================================================= */
+    #confirmedMapScreen {
+      display: none;
+      flex: 1;
+      height: calc(100vh - 64px);
+      position: relative;
+    }
+
+    #liveTrackingMap {
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Top Floating Trip HUD: Distance, Fare & Locations */
+    .top-trip-summary-hud {
+      position: absolute;
+      top: 18px;
+      left: 20px;
+      right: 20px;
+      background: rgba(18, 18, 18, 0.95);
+      backdrop-filter: blur(15px);
+      border: 1px solid var(--uber-border);
+      border-radius: 20px;
+      padding: 14px 20px;
+      z-index: 800;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+    }
+
+    .hud-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .hud-badge-confirmed {
+      background: rgba(0, 210, 106, 0.15);
+      border: 1px solid var(--ola-green);
+      color: var(--ola-green);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hud-metrics {
+      display: flex;
+      gap: 24px;
+    }
+
+    .metric-block {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .metric-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .metric-val {
+      font-size: 16px;
+      font-weight: 900;
+      color: #FFFFFF;
+    }
+
+    .metric-val.fare {
+      color: var(--ola-green);
+      font-size: 20px;
+    }
+
+    /* Bottom Floating Live Driver & OTP Card */
+    .bottom-driver-card {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      width: 440px;
+      max-width: calc(100vw - 40px);
+      background: rgba(18, 18, 18, 0.96);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--uber-border);
+      border-radius: 24px;
+      padding: 20px;
+      z-index: 800;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .driver-row-top {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .driver-avatar-circle {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--uber-blue);
+      border: 2px solid #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 20px;
+      color: #FFF;
+    }
+
+    .driver-text-meta h3 {
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .driver-text-meta p {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    /* OTP Highlight Badge */
+    .otp-code-box {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(0, 0, 0, 0.8));
+      border: 1.5px dashed var(--accent-gold);
+      border-radius: 16px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .otp-code-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 32px;
+      font-weight: 900;
+      color: var(--accent-gold);
+      letter-spacing: 8px;
+      margin: 4px 0;
+    }
+
+    /* Phone Call Grid */
+    .phone-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn-call {
+      background: #059669;
+      color: #FFFFFF;
+      border: none;
+      border-radius: 12px;
+      padding: 11px;
+      font-size: 12px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .btn-passenger-info {
+      background: var(--uber-surface);
+      color: #FFFFFF;
+      border: 1px solid var(--uber-border);
+      border-radius: 12px;
+      padding: 11px;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    /* Action Advance Button inside tracking */
+    .btn-advance-state {
+      background: var(--uber-blue);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    /* Map Custom Marker Icons */
+    .leaflet-pickup-pin {
+      background: #10B981;
+      color: #FFFFFF;
+      border: 3px solid #FFFFFF;
+      border-radius: 50%;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+
+    .leaflet-drop-pin {
+      background: #EF4444;
+      color: #FFFFFF;
+      border: 3px solid #FFFFFF;
+      border-radius: 50%;
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+
+    .leaflet-driver-car {
+      background: #000000;
+      color: #FFFFFF;
+      border: 2px solid var(--ola-green);
+      border-radius: 50%;
+      box-shadow: 0 0 15px rgba(0, 210, 106, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      transition: all 0.8s ease-out;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navbar -->
+  <div class="top-navbar">
+    <div class="brand-group" onclick="showHomeScreen()">
+      <div class="brand-logo">Uber</div>
+      <div style="font-weight: 800; font-size: 16px; color: #FFF;">• Ola Live</div>
+      <div class="brand-tag">
+        <div class="pulse-dot"></div>
+        <span>India Region Only</span>
+      </div>
+    </div>
+
+    <div>
+      <button class="btn btn-captain" onclick="alert('Rider Mode: Normal users can post rides on bike/car and set their own custom price!')">
+        <i class="fa-solid fa-motorcycle"></i> Post Ride (Rider Mode)
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       VIEW 1: CLEAN BOOKING HOME SCREEN (NO MAP WHEN OPENED)
+       ======================================================== -->
+  <div id="bookingHomeScreen">
+    <div class="booking-card-main">
+      
+      <div class="booking-hero-header">
+        <div>
+          <h2>Book a Ride</h2>
+          <p style="font-size: 13px; color: var(--text-secondary); margin-top: 2px;">India Region Live Ola / Uber Booking</p>
+        </div>
+        <!-- Mode Switcher (Instant vs HighTrip) -->
+        <div class="mode-pills">
+          <button class="mode-pill-btn active" id="btnModeInstant" onclick="setRideMode('instant')">
+            <i class="fa-solid fa-bolt"></i> Instant
+          </button>
+          <button class="mode-pill-btn" id="btnModeHighTrip" onclick="setRideMode('hightrip')">
+            <i class="fa-solid fa-route"></i> High Trip (2KM)
+          </button>
+        </div>
+      </div>
+
+      <!-- Location Input Box with Live Google/OSM Autocomplete (India Only) -->
+      <div class="location-card-container">
+        
+        <!-- Pickup Row with Live Location Access -->
+        <div class="loc-field-row">
+          <i class="fa-solid fa-circle-dot loc-icon-bullet" style="color: var(--ola-green);"></i>
+          <div class="loc-text-input">
+            <div class="loc-header-line">
+              <label>Pickup Location</label>
+              <button class="badge-btn-live-gps" type="button" onclick="useLiveCurrentGPS()">
+                <i class="fa-solid fa-location-crosshairs"></i> Use Live Location
+              </button>
+            </div>
+            <input type="text" id="homePickupInput" placeholder="Type 3-5 letters (e.g. Uma Char, Parul, Indiranagar)..." value="Uma Char Rasta, Vadodara, Gujarat" autocomplete="off" oninput="handleIndianAutocomplete(event, 'pickup')">
+            <div class="autocomplete-list" id="homePickupDropdown"></div>
+          </div>
+        </div>
+
+        <div class="loc-divider-line"></div>
+
+        <!-- Drop Row with Adjust on Map Option -->
+        <div class="loc-field-row">
+          <i class="fa-solid fa-location-dot loc-icon-bullet" style="color: var(--danger);"></i>
+          <div class="loc-text-input">
+            <div class="loc-header-line">
+              <label>Drop-off Destination</label>
+              <button class="badge-btn-adjust-map" type="button" onclick="openAdjustDropMapModal()">
+                <i class="fa-solid fa-map-pin"></i> Adjust on Map
+              </button>
+            </div>
+            <input type="text" id="homeDropInput" placeholder="Type 3-5 letters (e.g. Parul, Airport, Station)..." value="Parul University, Vadodara, Gujarat" autocomplete="off" oninput="handleIndianAutocomplete(event, 'drop')">
+            <div class="autocomplete-list" id="homeDropDropdown"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Vehicle Options Fleet -->
+      <div class="vehicle-fleet-grid" id="vehicleFleetList">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <!-- Main Confirm & Book Action -->
+      <button class="btn-confirm-ride" id="btnConfirmAndBook" onclick="confirmRideAndOpenMap()">
+        <span>Confirm Uber Go • ₹702</span>
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MODAL: ADJUST DROP ON MAP MODAL (User can adjust drop pin)
+       ======================================================== -->
+  <div class="map-modal-backdrop" id="adjustMapModal">
+    <div class="map-modal-box">
+      <div class="map-modal-header">
+        <div>
+          <h3 style="font-size: 16px; font-weight: 800; color: #FFF;">
+            <i class="fa-solid fa-map-location-dot" style="color: var(--danger);"></i>
+            Adjust Drop Location on Map
+          </h3>
+          <p style="font-size: 11px; color: var(--text-secondary);">Drag the red pin or click anywhere on the map to set exact drop-off</p>
+        </div>
+        <i class="fa-solid fa-xmark" style="font-size: 20px; cursor: pointer; color: #AAA;" onclick="closeAdjustDropMapModal()"></i>
+      </div>
+
+      <div id="adjustPickerMap"></div>
+
+      <div class="map-modal-footer">
+        <div>
+          <div style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Selected Drop Address:</div>
+          <div id="modalSelectedAddress" style="font-size: 13px; font-weight: 800; color: #FFF; max-width: 500px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            Parul University, Vadodara, Gujarat
+          </div>
+        </div>
+        <button class="btn btn-captain" onclick="saveAdjustedDropLocation()">
+          <i class="fa-solid fa-check"></i> Set Drop Location
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SCREEN 2: RIDE CONFIRMED FULL MAP & TRACKING SCREEN
+       ======================================================== -->
+  <div id="confirmedMapScreen">
+    
+    <!-- Fullscreen Leaflet Map -->
+    <div id="liveTrackingMap"></div>
+
+    <!-- Top Trip HUD: Distance, Fare (Paise kitne huye), Route -->
+    <div class="top-trip-summary-hud">
+      <div class="hud-left">
+        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px;" onclick="showHomeScreen()">
+          <i class="fa-solid fa-arrow-left"></i> Home
+        </button>
+        <div class="hud-badge-confirmed">
+          <div class="pulse-dot"></div>
+          <span id="hudRideStatusText">RIDE CONFIRMED</span>
+        </div>
+      </div>
+
+      <div class="hud-metrics">
+        <div class="metric-block">
+          <span class="metric-label">Total Distance</span>
+          <span class="metric-val" id="hudDistance">16.2 KM</span>
+        </div>
+        <div class="metric-block">
+          <span class="metric-label">Est. Time</span>
+          <span class="metric-val" id="hudDuration">~28 Mins</span>
+        </div>
+        <div class="metric-block">
+          <span class="metric-label">Total Fare (Paise)</span>
+          <span class="metric-val fare" id="hudFare">₹702</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Floating Driver, Phone Call & OTP Card -->
+    <div class="bottom-driver-card">
+      
+      <!-- Driver & Vehicle Profile -->
+      <div class="driver-row-top">
+        <div class="driver-avatar-circle">RS</div>
+        <div class="driver-text-meta" style="flex: 1;">
+          <h3>Rajesh Solanki</h3>
+          <p><i class="fa-solid fa-star" style="color: #FBBF24;"></i> 4.9 Rating (1,420 trips) • Top Driver</p>
+          <p style="color: #FFF; font-weight: 800; margin-top: 2px;" id="driverVehiclePlate">White Swift Dzire (GJ-06-AZ-5521)</p>
+        </div>
+      </div>
+
+      <!-- Prominent 4-Digit Security START OTP -->
+      <div class="otp-code-box" id="otpBoxWrapper">
+        <div style="font-size: 11px; font-weight: 800; color: #FFF; text-transform: uppercase;">
+          <i class="fa-solid fa-shield-halved" style="color: var(--accent-gold);"></i> Security Start OTP
+        </div>
+        <div class="otp-code-num" id="displayOtpNum">5842</div>
+        <div style="font-size: 11px; color: var(--text-secondary);">
+          Share this OTP with Rajesh Solanki when boarding at Pickup
+        </div>
+      </div>
+
+      <!-- In-Transit Trip Progress Indicator -->
+      <div id="tripInTransitBox" style="display: none;">
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">
+          <span>Live Trip Progress</span>
+          <span id="transitPercent">0%</span>
+        </div>
+        <div style="background: #2A2A2A; height: 8px; border-radius: 6px; overflow: hidden;">
+          <div id="transitProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--ola-green), #06B6D4); transition: width 0.4s;"></div>
+        </div>
+      </div>
+
+      <!-- Direct Phone Call Buttons (Both Rider & Passenger) -->
+      <div class="phone-grid">
+        <a class="btn-call" href="tel:+919825012345" onclick="alert('Calling Driver: Rajesh Solanki (+91 98250 12345)...')">
+          <i class="fa-solid fa-phone"></i> Call Driver (+91 98250...)
+        </a>
+        <button class="btn-passenger-info" onclick="alert('Passenger Contact Number: +91 98765 43210 (Shared with Captain)')">
+          <i class="fa-solid fa-user"></i> Passenger Details
+        </button>
+      </div>
+
+      <!-- State Advance Button (Driver Arrived -> Verify OTP -> Complete Ride) -->
+      <button class="btn-advance-state" id="btnAdvanceTracking" onclick="advanceTrackingState()">
+        <i class="fa-solid fa-key"></i> Simulate Driver Arrived & Verify OTP
+      </button>
+
+    </div>
+
+  </div>
+
+  <script>
+    // State Data
+    let map = null;
+    let adjustMap = null;
+    let adjustMarker = null;
+
+    let pickupMarker = null;
+    let dropMarker = null;
+    let driverCarMarker = null;
+    let routePolyline = null;
+    let routeCoordinates = [];
+
+    let currentMode = 'instant';
+    let selectedVehicleId = 'mini';
+    let currentDistanceKm = 16.2;
+    let debounceTimer = null;
+    let activeOtpCode = '5842';
+
+    let trackingState = 0; // 0 = Approaching, 1 = Arrived, 2 = In Transit, 3 = Completed
+    let driverAnimationTimer = null;
+
+    // Default Coordinates (India Region: Uma Char Rasta, Vadodara -> Parul University, Vadodara)
+    let pickupCoords = { lat: 22.30077, lng: 73.23004, title: 'Uma Char Rasta, Vadodara, Gujarat' };
+    let dropCoords = { lat: 22.28875, lng: 73.36384, title: 'Parul University, Vadodara, Gujarat' };
+
+    // Standard Vehicle Fleet
+    const vehicleFleet = [
+      { id: 'bike', name: 'Uber Moto', icon: 'fa-motorcycle', desc: 'Affordable, fast bike rides', price: 348, eta: '2 mins away' },
+      { id: 'auto', name: 'Uber Auto', icon: 'fa-truck-front', desc: 'Doorstep pickup, meter fare', price: 543, eta: '3 mins away' },
+      { id: 'mini', name: 'Uber Go', icon: 'fa-car-side', desc: 'Affordable, compact AC cabs', price: 702, eta: '4 mins away' },
+      { id: 'sedan', name: 'Uber Premier', icon: 'fa-car', desc: 'Comfortable sedans, top drivers', price: 912, eta: '5 mins away' }
+    ];
+
+    // Rich Instant Indian Places Dataset (Zero Latency matching as soon as 3-5 letters typed)
+    const indianFamousPlaces = [
+      // Vadodara & Gujarat
+      { title: 'Uma Char Rasta', desc: 'Waghodia Road, Vadodara, Gujarat', lat: 22.30077, lon: 73.23004 },
+      { title: 'Parul University', desc: 'Waghodia, Vadodara, Gujarat', lat: 22.28875, lon: 73.36384 },
+      { title: 'Vadodara Junction Railway Station', desc: 'Sayajiganj, Vadodara, Gujarat', lat: 22.3106, lon: 73.1812 },
+      { title: 'Alkapuri', desc: 'Vadodara, Gujarat', lat: 22.3129, lon: 73.1764 },
+      { title: 'Sayaji Baug', desc: 'Vinoba Bhave Road, Vadodara, Gujarat', lat: 22.3134, lon: 73.1895 },
+      { title: 'Vadodara Airport (BDQ)', desc: 'Harni Road, Vadodara, Gujarat', lat: 22.3361, lon: 73.2263 },
+      { title: 'SG Highway', desc: 'Ahmedabad, Gujarat', lat: 23.0489, lon: 72.5186 },
+      { title: 'Kalupur Railway Station', desc: 'Ahmedabad, Gujarat', lat: 23.0232, lon: 72.6006 },
+      // Delhi NCR
+      { title: 'Indira Gandhi International Airport (IGI T3)', desc: 'New Delhi, Delhi', lat: 28.5562, lon: 77.1000 },
+      { title: 'Connaught Place (CP)', desc: 'Central Delhi, New Delhi', lat: 28.6315, lon: 77.2167 },
+      { title: 'New Delhi Railway Station (NDLS)', desc: 'Bhavbhuti Marg, New Delhi', lat: 28.6430, lon: 77.2197 },
+      { title: 'Cyber City', desc: 'DLF Phase 2, Gurugram, Haryana', lat: 28.4950, lon: 77.0895 },
+      { title: 'Hauz Khas Metro Station', desc: 'South Delhi, New Delhi', lat: 28.5432, lon: 77.2065 },
+      { title: 'Sector 62', desc: 'Noida, Uttar Pradesh', lat: 28.6280, lon: 77.3649 },
+      // Bengaluru
+      { title: 'Indiranagar 100 Feet Road', desc: 'Indiranagar, Bengaluru, Karnataka', lat: 12.9784, lon: 77.6408 },
+      { title: 'Kempegowda International Airport (BLR)', desc: 'Devanahalli, Bengaluru', lat: 13.1986, lon: 77.7066 },
+      { title: 'KSR Bengaluru City Railway Station', desc: 'Majestic, Bengaluru', lat: 12.9778, lon: 77.5713 },
+      { title: 'Whitefield ITPL Main Gate', desc: 'Whitefield, Bengaluru', lat: 12.9850, lon: 77.7280 },
+      { title: 'Koramangala 5th Block', desc: 'Koramangala, Bengaluru', lat: 12.9352, lon: 77.6245 },
+      { title: 'Electronic City Phase 1', desc: 'Hosur Road, Bengaluru', lat: 12.8452, lon: 77.6602 },
+      // Mumbai
+      { title: 'Chhatrapati Shivaji Maharaj Airport (BOM T2)', desc: 'Andheri East, Mumbai', lat: 19.0896, lon: 72.8656 },
+      { title: 'Bandra Kurla Complex (BKC)', desc: 'Bandra East, Mumbai', lat: 19.0657, lon: 72.8687 },
+      { title: 'Marine Drive', desc: 'Nariman Point, South Mumbai', lat: 18.9432, lon: 72.8230 },
+      { title: 'Chhatrapati Shivaji Terminus (CSMT)', desc: 'Fort, Mumbai', lat: 18.9402, lon: 72.8353 },
+      // Other Metros
+      { title: 'Patna Junction Railway Station', desc: 'Fraser Road, Patna, Bihar', lat: 25.6025, lon: 85.1376 },
+      { title: 'Boring Road Crossing', desc: 'Patna, Bihar', lat: 25.6178, lon: 85.1206 },
+      { title: 'Charminar', desc: 'Old City, Hyderabad, Telangana', lat: 17.3616, lon: 78.4747 },
+      { title: 'Hitec City', desc: 'Madhapur, Hyderabad, Telangana', lat: 17.4474, lon: 78.3762 },
+      { title: 'Hinjewadi IT Park Phase 1', desc: 'Pune, Maharashtra', lat: 18.5913, lon: 73.7389 }
+    ];
+
+    window.addEventListener('load', () => {
+      renderHomeScreenVehicles();
+
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.loc-field-row')) {
+          document.querySelectorAll('.autocomplete-list').forEach(d => d.classList.remove('active'));
+        }
+      });
+    });
+
+    function renderHomeScreenVehicles() {
+      const container = document.getElementById('vehicleFleetList');
+      let html = '';
+
+      vehicleFleet.forEach(veh => {
+        const isSelected = veh.id === selectedVehicleId;
+        html += `
+          <div class="vehicle-option-tile ${isSelected ? 'selected' : ''}" onclick="selectHomeVehicle('${veh.id}')">
+            <div class="veh-info-left">
+              <div class="veh-icon-box">
+                <i class="fa-solid ${veh.icon}"></i>
+              </div>
+              <div class="veh-texts">
+                <h4>${veh.name}</h4>
+                <p>${veh.desc}</p>
+              </div>
+            </div>
+            <div class="veh-price-right">
+              <div class="price">₹${veh.price}</div>
+              <div class="eta">${veh.eta}</div>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+
+      const sel = vehicleFleet.find(v => v.id === selectedVehicleId) || vehicleFleet[2];
+      document.getElementById('btnConfirmAndBook').innerHTML = `
+        <span>Confirm ${sel.name} • ₹${sel.price}</span>
+        <i class="fa-solid fa-arrow-right"></i>
+      `;
+    }
+
+    function selectHomeVehicle(id) {
+      selectedVehicleId = id;
+      renderHomeScreenVehicles();
+    }
+
+    function setRideMode(mode) {
+      currentMode = mode;
+      document.getElementById('btnModeInstant').classList.toggle('active', mode === 'instant');
+      document.getElementById('btnModeHighTrip').classList.toggle('active', mode === 'hightrip');
+      document.getElementById('btnModeHighTrip').classList.toggle('hightrip-mode', mode === 'hightrip');
+
+      if (mode === 'hightrip') {
+        alert('High Trip (2KM Corridor): Bikers and car owners share routes at their own custom prices!');
+      }
+    }
+
+    // 1. Pickup: Live Location Access using Device GPS
+    function useLiveCurrentGPS() {
+      if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser.');
+        return;
+      }
+
+      const input = document.getElementById('homePickupInput');
+      input.value = 'Locating current GPS position...';
+
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+
+          try {
+            // Reverse geocode to get clean Indian address
+            const res = await fetch(`/api/reverse?lat=${lat}&lon=${lon}`);
+            const data = await res.json();
+            const cleanTitle = data.name || data.display_name.split(',').slice(0, 3).join(',');
+
+            pickupCoords = { lat: lat, lng: lon, title: cleanTitle };
+            input.value = cleanTitle;
+          } catch (e) {
+            pickupCoords = { lat: lat, lng: lon, title: 'Current GPS Location' };
+            input.value = 'Current GPS Location';
+          }
+
+          calculateRoadDistance(pickupCoords, dropCoords);
+        },
+        (err) => {
+          alert('GPS Access Error: ' + err.message);
+          input.value = 'Uma Char Rasta, Vadodara, Gujarat';
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
+
+    // 2. Autocomplete: Filtered Strictly to India (Matches on 3 to 5 letters)
+    function handleIndianAutocomplete(event, type) {
+      const query = event.target.value.trim().toLowerCase();
+      const dropdown = document.getElementById(type === 'pickup' ? 'homePickupDropdown' : 'homeDropDropdown');
+
+      clearTimeout(debounceTimer);
+
+      if (query.length < 3) {
+        dropdown.classList.remove('active');
+        return;
+      }
+
+      // 1. Instant match from Local Indian Famous Places dataset
+      const localMatches = indianFamousPlaces.filter(p =>
+        p.title.toLowerCase().includes(query) || p.desc.toLowerCase().includes(query)
+      );
+
+      let html = '';
+      localMatches.slice(0, 4).forEach(place => {
+        html += `
+          <div class="ac-item" onclick="selectIndianPlace('${type}', ${place.lat}, ${place.lon}, '${place.title.replace(/'/g, "\\'")}', '${place.desc.replace(/'/g, "\\'")}')">
+            <i class="fa-solid fa-location-dot"></i>
+            <div>
+              <div class="ac-main-name">${place.title}</div>
+              <div class="ac-sub-address">${place.desc}</div>
+            </div>
+          </div>
+        `;
+      });
+
+      if (html) {
+        dropdown.innerHTML = html;
+        dropdown.classList.add('active');
+      }
+
+      // 2. Fetch live India-restricted places from API (countrycodes=in)
+      debounceTimer = setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`);
+          const results = await res.json();
+
+          if (results && results.length > 0) {
+            results.forEach(place => {
+              const cleanTitle = place.name || place.display_name.split(',')[0];
+              const cleanDesc = place.display_name.split(',').slice(1, 4).join(',');
+
+              html += `
+                <div class="ac-item" onclick="selectIndianPlace('${type}', ${place.lat}, ${place.lon}, '${cleanTitle.replace(/'/g, "\\'")}', '${place.display_name.replace(/'/g, "\\'")}')">
+                  <i class="fa-solid fa-map-pin"></i>
+                  <div>
+                    <div class="ac-main-name">${cleanTitle}</div>
+                    <div class="ac-sub-address">${cleanDesc}</div>
+                  </div>
+                </div>
+              `;
+            });
+            dropdown.innerHTML = html;
+            dropdown.classList.add('active');
+          }
+        } catch (e) {}
+      }, 200);
+    }
+
+    function selectIndianPlace(type, lat, lon, title, fullAddress) {
+      document.querySelectorAll('.autocomplete-list').forEach(d => d.classList.remove('active'));
+
+      if (type === 'pickup') {
+        pickupCoords = { lat: parseFloat(lat), lng: parseFloat(lon), title: title };
+        document.getElementById('homePickupInput').value = fullAddress ? fullAddress.split(',').slice(0, 3).join(',') : title;
+      } else {
+        dropCoords = { lat: parseFloat(lat), lng: parseFloat(lon), title: title };
+        document.getElementById('homeDropInput').value = fullAddress ? fullAddress.split(',').slice(0, 3).join(',') : title;
+      }
+
+      calculateRoadDistance(pickupCoords, dropCoords);
+    }
+
+    // 3. Drop: Adjust on Map Modal
+    function openAdjustDropMapModal() {
+      document.getElementById('adjustMapModal').classList.add('active');
+
+      if (!adjustMap) {
+        adjustMap = L.map('adjustPickerMap', {
+          zoomControl: true,
+          attributionControl: false
+        }).setView([dropCoords.lat, dropCoords.lng], 14);
+
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(adjustMap);
+
+        const dropPinIcon = L.divIcon({
+          className: 'leaflet-drop-pin',
+          iconSize: [32, 32],
+          html: '<i class="fa-solid fa-location-dot"></i>'
+        });
+
+        adjustMarker = L.marker([dropCoords.lat, dropCoords.lng], {
+          icon: dropPinIcon,
+          draggable: true
+        }).addTo(adjustMap);
+
+        adjustMarker.on('dragend', function (e) {
+          const pos = e.target.getLatLng();
+          reverseGeocodeAdjustedDrop(pos.lat, pos.lng);
+        });
+
+        adjustMap.on('click', function (e) {
+          adjustMarker.setLatLng(e.latlng);
+          reverseGeocodeAdjustedDrop(e.latlng.lat, e.latlng.lng);
+        });
+      } else {
+        setTimeout(() => {
+          adjustMap.invalidateSize();
+          adjustMap.setView([dropCoords.lat, dropCoords.lng], 14);
+          adjustMarker.setLatLng([dropCoords.lat, dropCoords.lng]);
+        }, 150);
+      }
+
+      document.getElementById('modalSelectedAddress').innerText = dropCoords.title;
+    }
+
+    async function reverseGeocodeAdjustedDrop(lat, lon) {
+      try {
+        const res = await fetch(`/api/reverse?lat=${lat}&lon=${lon}`);
+        const data = await res.json();
+        const address = data.name || data.display_name.split(',').slice(0, 3).join(',');
+        document.getElementById('modalSelectedAddress').innerText = address;
+        dropCoords.tempLat = lat;
+        dropCoords.tempLng = lon;
+        dropCoords.tempTitle = address;
+      } catch (e) {
+        document.getElementById('modalSelectedAddress').innerText = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+      }
+    }
+
+    function saveAdjustedDropLocation() {
+      if (dropCoords.tempLat) {
+        dropCoords.lat = dropCoords.tempLat;
+        dropCoords.lng = dropCoords.tempLng;
+        dropCoords.title = dropCoords.tempTitle || dropCoords.title;
+        document.getElementById('homeDropInput').value = dropCoords.title;
+      }
+      closeAdjustDropMapModal();
+      calculateRoadDistance(pickupCoords, dropCoords);
+    }
+
+    function closeAdjustDropMapModal() {
+      document.getElementById('adjustMapModal').classList.remove('active');
+    }
+
+    // Road distance calculation via OSRM
+    async function calculateRoadDistance(p, d) {
+      const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${p.lng},${p.lat};${d.lng},${d.lat}?overview=false`;
+      try {
+        const res = await fetch(osrmUrl);
+        const data = await res.json();
+        if (data.routes && data.routes[0]) {
+          currentDistanceKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
+          updateFleetFares(currentDistanceKm);
+        }
+      } catch (e) {}
+    }
+
+    function updateFleetFares(km) {
+      vehicleFleet[0].price = Math.max(45, Math.round(30 + km * 20));  // Moto
+      vehicleFleet[1].price = Math.max(65, Math.round(45 + km * 31));  // Auto
+      vehicleFleet[2].price = Math.max(90, Math.round(60 + km * 40));  // Uber Go
+      vehicleFleet[3].price = Math.max(120, Math.round(90 + km * 51)); // Premier
+      renderHomeScreenVehicles();
+    }
+
+    // 4. CONFIRMED SCREEN (FULL MAP & LIVE TRACKING)
+    function confirmRideAndOpenMap() {
+      const sel = vehicleFleet.find(v => v.id === selectedVehicleId) || vehicleFleet[2];
+
+      document.getElementById('bookingHomeScreen').style.display = 'none';
+      document.getElementById('confirmedMapScreen').style.display = 'flex';
+
+      document.getElementById('hudDistance').innerText = `${currentDistanceKm} KM`;
+      document.getElementById('hudFare').innerText = `₹${sel.price}`;
+      document.getElementById('hudDuration').innerText = `~${Math.round(currentDistanceKm * 1.8)} Mins`;
+
+      activeOtpCode = Math.floor(1000 + Math.random() * 9000).toString();
+      document.getElementById('displayOtpNum').innerText = activeOtpCode;
+
+      if (!map) {
+        initTrackingMap();
+      } else {
+        setTimeout(() => {
+          map.invalidateSize();
+          drawConfirmedRoute();
+        }, 100);
+      }
+    }
+
+    function showHomeScreen() {
+      clearInterval(driverAnimationTimer);
+      if (driverCarMarker && map) map.removeLayer(driverCarMarker);
+      driverCarMarker = null;
+
+      document.getElementById('confirmedMapScreen').style.display = 'none';
+      document.getElementById('bookingHomeScreen').style.display = 'flex';
+    }
+
+    function initTrackingMap() {
+      map = L.map('liveTrackingMap', {
+        zoomControl: false,
+        attributionControl: false
+      }).setView([pickupCoords.lat, pickupCoords.lng], 13);
+
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+      drawConfirmedRoute();
+    }
+
+    async function drawConfirmedRoute() {
+      if (pickupMarker) map.removeLayer(pickupMarker);
+      if (dropMarker) map.removeLayer(dropMarker);
+      if (routePolyline) map.removeLayer(routePolyline);
+      if (driverCarMarker) map.removeLayer(driverCarMarker);
+
+      // 🟢 Green Pickup Marker
+      const pickupIcon = L.divIcon({
+        className: 'leaflet-pickup-pin',
+        iconSize: [28, 28],
+        html: '<i class="fa-solid fa-circle-dot"></i>'
+      });
+      pickupMarker = L.marker([pickupCoords.lat, pickupCoords.lng], { icon: pickupIcon }).addTo(map);
+      pickupMarker.bindPopup(`<b>🟢 Pickup Location</b><br>${pickupCoords.title}`).openPopup();
+
+      // 🔴 Red Drop Marker
+      const dropIcon = L.divIcon({
+        className: 'leaflet-drop-pin',
+        iconSize: [28, 28],
+        html: '<i class="fa-solid fa-location-dot"></i>'
+      });
+      dropMarker = L.marker([dropCoords.lat, dropCoords.lng], { icon: dropIcon }).addTo(map);
+      dropMarker.bindPopup(`<b>🔴 Destination (Drop)</b><br>${dropCoords.title}`);
+
+      // Road Route from OSRM
+      const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${pickupCoords.lng},${pickupCoords.lat};${dropCoords.lng},${dropCoords.lat}?overview=full&geometries=geojson`;
+
+      try {
+        const res = await fetch(osrmUrl);
+        const data = await res.json();
+
+        if (data.routes && data.routes[0]) {
+          routeCoordinates = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+
+          routePolyline = L.polyline(routeCoordinates, {
+            color: '#276EF1',
+            weight: 5,
+            opacity: 0.9,
+            lineCap: 'round'
+          }).addTo(map);
+
+          map.fitBounds(routePolyline.getBounds(), { padding: [100, 100] });
+
+          startDriverApproachingPickup();
+        }
+      } catch (err) {
+        routePolyline = L.polyline([[pickupCoords.lat, pickupCoords.lng], [dropCoords.lat, dropCoords.lng]], {
+          color: '#276EF1',
+          weight: 4
+        }).addTo(map);
+      }
+    }
+
+    function startDriverApproachingPickup() {
+      trackingState = 0;
+      const driverStartLat = pickupCoords.lat + 0.007;
+      const driverStartLng = pickupCoords.lng - 0.008;
+
+      const driverIcon = L.divIcon({
+        className: 'leaflet-driver-car',
+        iconSize: [34, 34],
+        html: '<i class="fa-solid fa-car-side"></i>'
+      });
+
+      driverCarMarker = L.marker([driverStartLat, driverStartLng], { icon: driverIcon }).addTo(map);
+      driverCarMarker.bindPopup('<b>Rajesh Solanki (Swift Dzire)</b><br>Live arriving at Pickup!').openPopup();
+
+      let step = 0;
+      const totalSteps = 10;
+
+      clearInterval(driverAnimationTimer);
+      driverAnimationTimer = setInterval(() => {
+        step++;
+        const curLat = driverStartLat + (pickupCoords.lat - driverStartLat) * (step / totalSteps);
+        const curLng = driverStartLng + (pickupCoords.lng - driverStartLng) * (step / totalSteps);
+        driverCarMarker.setLatLng([curLat, curLng]);
+
+        if (step >= totalSteps) {
+          clearInterval(driverAnimationTimer);
+          driverReachedPickup();
+        }
+      }, 1000);
+    }
+
+    function driverReachedPickup() {
+      trackingState = 1;
+      document.getElementById('hudRideStatusText').innerText = 'CAPTAIN ARRIVED AT PICKUP';
+      driverCarMarker.bindPopup('<b>Captain Arrived at Pickup!</b><br>Board car and share OTP.').openPopup();
+
+      document.getElementById('btnAdvanceTracking').innerHTML = '<i class="fa-solid fa-key"></i> Verify OTP & Start Full Ride';
+      document.getElementById('btnAdvanceTracking').style.background = '#10B981';
+
+      alert(`🔔 Captain Rajesh Solanki has arrived at Pickup!\n\nShare 4-Digit START OTP: ${activeOtpCode} to begin your trip.`);
+    }
+
+    function advanceTrackingState() {
+      if (trackingState === 0) {
+        clearInterval(driverAnimationTimer);
+        driverCarMarker.setLatLng([pickupCoords.lat, pickupCoords.lng]);
+        driverReachedPickup();
+        return;
+      }
+
+      if (trackingState === 1) {
+        const enteredOtp = prompt('Enter 4-Digit Security OTP to start ride (Default: ' + activeOtpCode + '):', activeOtpCode);
+        if (enteredOtp !== activeOtpCode) {
+          alert('Incorrect OTP code.');
+          return;
+        }
+
+        trackingState = 2;
+        document.getElementById('hudRideStatusText').innerText = 'TRIP IN PROGRESS';
+        document.getElementById('otpBoxWrapper').style.display = 'none';
+        document.getElementById('tripInTransitBox').style.display = 'block';
+        document.getElementById('btnAdvanceTracking').innerHTML = '<i class="fa-solid fa-flag-checkered"></i> Complete Trip at Destination';
+
+        animateCarAlongRoutePolyline();
+        return;
+      }
+
+      if (trackingState === 2) {
+        finishTripCompleted();
+      }
+    }
+
+    function animateCarAlongRoutePolyline() {
+      if (!routeCoordinates || routeCoordinates.length === 0) {
+        finishTripCompleted();
+        return;
+      }
+
+      let idx = 0;
+      const total = routeCoordinates.length;
+
+      clearInterval(driverAnimationTimer);
+      driverAnimationTimer = setInterval(() => {
+        idx += Math.max(1, Math.floor(total / 25));
+
+        if (idx >= total) {
+          clearInterval(driverAnimationTimer);
+          driverCarMarker.setLatLng([dropCoords.lat, dropCoords.lng]);
+          finishTripCompleted();
+          return;
+        }
+
+        const pt = routeCoordinates[idx];
+        driverCarMarker.setLatLng(pt);
+
+        const pct = Math.round((idx / total) * 100);
+        document.getElementById('transitProgressBar').style.width = `${pct}%`;
+        document.getElementById('transitPercent').innerText = `${pct}%`;
+      }, 500);
+    }
+
+    function finishTripCompleted() {
+      clearInterval(driverAnimationTimer);
+      trackingState = 3;
+
+      const sel = vehicleFleet.find(v => v.id === selectedVehicleId) || vehicleFleet[2];
+
+      alert(`🎉 Trip Completed Successfully!\n\nYou have safely reached ${dropCoords.title}.\n\nTotal Distance: ${currentDistanceKm} KM\nTotal Paid: ₹${sel.price}\nPayment Mode: Cash / UPI\nCaptain: Rajesh Solanki (5.0 ★)\n\nThank you for riding with us!`);
+
+      showHomeScreen();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "RideHailing",
+    "slug": "ride-hailing-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "ridehail",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}

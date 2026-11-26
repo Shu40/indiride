@@ -1,0 +1,32 @@
+[
+  {
+    "id": "bk_mv9lciaj",
+    "tripId": "trip_mv9e94nv4zg7",
+    "passengerName": "Amit Verma",
+    "passengerPhone": "9812345678",
+    "seatsBooked": 1,
+    "totalFare": 65,
+    "otpCode": "8019",
+    "status": "CONFIRMED",
+    "bookedAt": "2026-10-15T13:45:13.627Z",
+    "tripDetails": {
+      "creatorName": "Vikas Kumar (Bike Rider)",
+      "creatorPhone": "9876543210",
+      "vehicleName": "Hero Splendor Plus",
+      "vehicleNumber": "KA-01-EQ-1234",
+      "origin": {
+        "title": "Indiranagar Metro Station",
+        "fullAddress": "CMH Road, Indiranagar",
+        "latitude": 12.9784,
+        "longitude": 77.6408
+      },
+      "destination": {
+        "title": "ITPL Main Gate, Whitefield",
+        "fullAddress": "Whitefield Main Rd, Bangalore",
+        "latitude": 12.985,
+        "longitude": 77.728
+      },
+      "farePerSeat": 65
+    }
+  }
+]

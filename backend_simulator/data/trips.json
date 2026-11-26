@@ -1,0 +1,58 @@
+[
+  {
+    "id": "trip_mv9lgydf0gx2",
+    "creatorName": "Rahul Sharma",
+    "creatorPhone": "9876543210",
+    "creatorRole": "Bike Rider",
+    "vehicleType": "bike",
+    "vehicleName": "Hero Splendor Plus (DL-01-AB-1234)",
+    "vehicleNumber": "",
+    "origin": {
+      "title": "Indiranagar 100ft Road",
+      "fullAddress": "Indiranagar 100ft Road",
+      "latitude": 12.9784,
+      "longitude": 77.6408
+    },
+    "destination": {
+      "title": "Electronic City Phase 1",
+      "fullAddress": "Electronic City Phase 1",
+      "latitude": 12.8452,
+      "longitude": 77.6602
+    },
+    "scheduledTime": "Leaving in 15 mins",
+    "totalSeats": 1,
+    "availableSeats": 1,
+    "farePerSeat": 10,
+    "notes": "Sanitized helmet provided, driving safely.",
+    "status": "OPEN",
+    "createdAt": "2026-10-15T13:48:41.091Z"
+  },
+  {
+    "id": "trip_mv9e94nv4zg7",
+    "creatorName": "Vikas Kumar (Bike Rider)",
+    "creatorPhone": "9876543210",
+    "creatorRole": "Bike Rider",
+    "vehicleType": "bike",
+    "vehicleName": "Hero Splendor Plus",
+    "vehicleNumber": "KA-01-EQ-1234",
+    "origin": {
+      "title": "Indiranagar Metro Station",
+      "fullAddress": "CMH Road, Indiranagar",
+      "latitude": 12.9784,
+      "longitude": 77.6408
+    },
+    "destination": {
+      "title": "ITPL Main Gate, Whitefield",
+      "fullAddress": "Whitefield Main Rd, Bangalore",
+      "latitude": 12.985,
+      "longitude": 77.728
+    },
+    "scheduledTime": "Leaving in 10 mins",
+    "totalSeats": 1,
+    "availableSeats": 0,
+    "farePerSeat": 65,
+    "notes": "Going to office, have extra sanitized helmet",
+    "status": "FULL",
+    "createdAt": "2026-10-15T10:26:38.683Z"
+  }
+]
