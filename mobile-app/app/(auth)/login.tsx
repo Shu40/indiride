@@ -1370,16 +1370,15 @@ export default function LoginScreen() {
                   {/* 1. STATE SELECTION */}
                   <Text style={styles.inputFieldLabel}>1. SELECT OPERATING STATE *</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }}>
-                    <View style={{ flexDirection: 'row', gap: 8, paddingVertical: 4 }}>
+                    <View style={{ flexDirection: 'row', paddingVertical: 4 }}>
                       {INDIAN_STATES_CITIES.map((st) => {
                         const isSelected = driverState === st.state;
                         return (
                           <TouchableOpacity
                             key={st.state}
                             style={[
-                              styles.roleChip,
-                              isSelected && styles.roleChipActive,
-                              { paddingHorizontal: 12, paddingVertical: 8 }
+                              styles.pillChip,
+                              isSelected && styles.pillChipActive,
                             ]}
                             onPress={() => {
                               setDriverState(st.state);
@@ -1408,16 +1407,15 @@ export default function LoginScreen() {
                       <Text style={styles.inputFieldLabel}>
                         2. SELECT OPERATING CITY IN {driverState.toUpperCase()} *
                       </Text>
-                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 }}>
                         {INDIAN_STATES_CITIES.find((s) => s.state === driverState)?.cities.map((ct) => {
                           const isCitySelected = driverCity === ct;
                           return (
                             <TouchableOpacity
                               key={ct}
                               style={[
-                                styles.roleChip,
-                                isCitySelected && { backgroundColor: '#10b981', borderColor: '#059669' },
-                                { paddingHorizontal: 12, paddingVertical: 8 }
+                                styles.pillChip,
+                                isCitySelected && styles.pillChipSelectedGreen,
                               ]}
                               onPress={() => {
                                 setDriverCity(ct);
@@ -2494,6 +2492,26 @@ const styles = StyleSheet.create<any>({
   roleChipActive: {
     backgroundColor: '#2563EB',
     borderColor: '#2563EB',
+  },
+  pillChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#f1f5f9',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  pillChipActive: {
+    backgroundColor: '#2563EB',
+    borderColor: '#1d4ed8',
+  },
+  pillChipSelectedGreen: {
+    backgroundColor: '#059669',
+    borderColor: '#047857',
   },
   roleChipText: {
     fontSize: 13,
