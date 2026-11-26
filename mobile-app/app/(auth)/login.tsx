@@ -728,6 +728,9 @@ export default function LoginScreen() {
               {/* HubDwar Live Promotion Spotlight (Desktop / Tablet view) */}
               {windowWidth > 640 && (
                 <TouchableOpacity
+                  accessibilityRole="link"
+                  // @ts-ignore
+                  href="https://hubdwar.online"
                   style={styles.hubdwarDesktopSideCard}
                   onPress={() => {
                     if (Platform.OS === 'web' && typeof window !== 'undefined') {
@@ -738,25 +741,25 @@ export default function LoginScreen() {
                 >
                   <View style={styles.hubdwarBadgeRow}>
                     <View style={styles.hubdwarLiveBadge}>
-                      <Text style={styles.hubdwarLiveBadgeText}>SPONSORED • LIVE</Text>
+                      <Text style={styles.hubdwarLiveBadgeText}>SPONSORED</Text>
                     </View>
                     <View style={styles.hubdwarMonthBadge}>
-                      <Text style={styles.hubdwarMonthBadgeText}>1 MONTH PROMO</Text>
+                      <Text style={styles.hubdwarMonthBadgeText}>30-DAY FEATURE</Text>
                     </View>
                   </View>
 
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 8 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 6 }}>
                     <View style={styles.hubdwarIconBox}>
-                      <MaterialCommunityIcons name="code-braces" size={22} color="#38bdf8" />
+                      <MaterialCommunityIcons name="code-braces" size={20} color="#38bdf8" />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.hubdwarTitle}>HubDwar.online</Text>
-                      <Text style={styles.hubdwarTagline} numberOfLines={1}>India's Biggest Career Platform</Text>
+                      <Text style={styles.hubdwarTitle} numberOfLines={1}>HubDwar.online</Text>
+                      <Text style={styles.hubdwarTagline} numberOfLines={1}>Coding &amp; Career Opportunities</Text>
                     </View>
                   </View>
 
-                  <Text style={styles.hubdwarDescText}>
-                    🔥 Live now for Coding Interview Prep, AI Mock Interviews, ATS Resume Builder, and Top Tech Company Internships &amp; Jobs!
+                  <Text style={styles.hubdwarDescText} numberOfLines={3}>
+                    🚀 Live now: Coding Interview Prep, AI Mock Interviews, ATS Resume Builder, and Tech Company Opportunities &amp; Internships!
                   </Text>
 
                   <View style={styles.hubdwarCtaBtn}>
