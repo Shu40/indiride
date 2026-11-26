@@ -705,12 +705,93 @@ export default function LoginScreen() {
             bounces={false}
             showsVerticalScrollIndicator={false}
           >
-            {/* Header Brand */}
+            {/* Header Brand with Tiranga Waving Animation & Bhagwa / Green Colors */}
             <View style={styles.welcomeBrandHeader}>
-              <Text style={styles.welcomeBrandTitle}>
-                <Text style={{ color: '#2563EB' }}>Indi</Text>
-                <Text style={{ color: '#111827' }}>Ride</Text>
-              </Text>
+              {Platform.OS === 'web' && (
+                <style
+                  // @ts-ignore
+                  dangerouslySetInnerHTML={{
+                    __html: `
+                      @keyframes tirangaFlagWave {
+                        0%, 100% {
+                          transform: translateY(0px) rotate(0deg);
+                        }
+                        20% {
+                          transform: translateY(-6px) rotate(-1.5deg);
+                        }
+                        40% {
+                          transform: translateY(-2px) rotate(0.8deg);
+                        }
+                        60% {
+                          transform: translateY(5px) rotate(1.8deg);
+                        }
+                        80% {
+                          transform: translateY(1px) rotate(-0.8deg);
+                        }
+                      }
+                      @keyframes kanKanSparkle {
+                        0%, 100% {
+                          opacity: 0.2;
+                          transform: scale(0.6) rotate(0deg);
+                        }
+                        50% {
+                          opacity: 1;
+                          transform: scale(1.3) rotate(180deg);
+                          filter: drop-shadow(0 0 6px #ff9933);
+                        }
+                      }
+                    `
+                  }}
+                />
+              )}
+
+              <View style={styles.tirangaBrandWrap}>
+                {/* Floating particle sparkles ("kan kan me tutake") */}
+                <Text style={[styles.tirangaSparkle, { top: -6, left: -6, color: '#FF9933' }]}>✦</Text>
+                <Text style={[styles.tirangaSparkle, { top: -4, right: -6, color: '#16A34A', ...Platform.OS === 'web' ? { animationDelay: '0.6s' } : {} }]}>✦</Text>
+                <Text style={[styles.tirangaSparkle, { bottom: -2, left: '48%', color: '#000080', fontSize: 10, ...Platform.OS === 'web' ? { animationDelay: '1.2s' } : {} }]}>☸</Text>
+
+                <View style={styles.tirangaLettersRow}>
+                  {/* "Indi" in Bhagwa / Saffron with Fluttering Flag Sine Wave */}
+                  {['I', 'n', 'd', 'i'].map((char, idx) => (
+                    <Text
+                      key={`saffron-${idx}`}
+                      style={[
+                        styles.tirangaLetter,
+                        styles.tirangaSaffron,
+                        // @ts-ignore
+                        Platform.OS === 'web' && {
+                          animation: 'tirangaFlagWave 2.2s ease-in-out infinite',
+                          animationDelay: `${idx * 0.12}s`,
+                          display: 'inline-block',
+                        },
+                      ]}
+                    >
+                      {char}
+                    </Text>
+                  ))}
+
+                  {/* "Ride" in Green with Continuous Fluttering Wave */}
+                  {['R', 'i', 'd', 'e'].map((char, idx) => (
+                    <Text
+                      key={`green-${idx}`}
+                      style={[
+                        styles.tirangaLetter,
+                        styles.tirangaGreen,
+                        // @ts-ignore
+                        Platform.OS === 'web' && {
+                          animation: 'tirangaFlagWave 2.2s ease-in-out infinite',
+                          animationDelay: `${(idx + 4) * 0.12}s`,
+                          display: 'inline-block',
+                        },
+                      ]}
+                    >
+                      {char}
+                    </Text>
+                  ))}
+                </View>
+              </View>
+
               <Text style={styles.welcomeTagline}>Bihar's Smart Ride-Hailing Network</Text>
             </View>
 
@@ -2433,6 +2514,46 @@ const styles = StyleSheet.create<any>({
     fontSize: 42,
     fontWeight: '900',
     letterSpacing: -1,
+  },
+  tirangaBrandWrap: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 2,
+  },
+  tirangaLettersRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tirangaLetter: {
+    fontSize: 42,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  tirangaSaffron: {
+    color: '#FF671F',
+    textShadowColor: 'rgba(255, 103, 31, 0.45)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+  },
+  tirangaGreen: {
+    color: '#138808',
+    textShadowColor: 'rgba(19, 136, 8, 0.45)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+  },
+  tirangaSparkle: {
+    position: 'absolute',
+    fontSize: 11,
+    fontWeight: '900',
+    // @ts-ignore
+    ...(Platform.OS === 'web' ? {
+      animation: 'kanKanSparkle 2s ease-in-out infinite',
+      pointerEvents: 'none',
+      userSelect: 'none',
+    } : {}),
   },
   welcomeTagline: {
     fontSize: 15,
