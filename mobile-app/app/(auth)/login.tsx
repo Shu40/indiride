@@ -26,6 +26,8 @@ import { LoginHeroVideo } from '../../src/components/LoginHeroVideo';
 import { FounderStoryModal } from '../../src/components/FounderStoryModal';
 import { PlayStoreComingSoonModal } from '../../src/components/PlayStoreComingSoonModal';
 import { InstitutionMultiSelectModal } from '../../src/components/campus/InstitutionMultiSelectModal';
+import { PendingDriverApprovalModal } from '../../src/components/PendingDriverApprovalModal';
+import { INDIAN_STATES_CITIES } from '../../src/data/indianLocations';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -57,36 +59,59 @@ export default function LoginScreen() {
   const [vehicleCategory, setVehicleCategory] = useState<'bike' | 'bullet' | 'car' | 'auto'>('bike');
   const [vehiclePlate, setVehiclePlate] = useState('');
   const [vehicleModel, setVehicleModel] = useState('Hero Splendor Plus');
-  const [riderServiceType, setRiderServiceType] = useState<'REGULAR' | 'CAMPUS'>('CAMPUS');
-  const [servedUniversities, setServedUniversities] = useState('Parul University, Vadodara');
-  const [collegeName, setCollegeName] = useState('Parul University');
+  const [riderServiceType, setRiderServiceType] = useState<'REGULAR' | 'CAMPUS'>('REGULAR');
+  const [driverState, setDriverState] = useState('');
+  const [driverCity, setDriverCity] = useState('');
+  const [servedUniversities, setServedUniversities] = useState('');
+  const [collegeName, setCollegeName] = useState('');
   const [showUniPickerModal, setShowUniPickerModal] = useState(false);
-  const [academicYear, setAcademicYear] = useState('Final Year (2024-25)');
+  const [academicYear, setAcademicYear] = useState('Current Academic Year');
   const [studentIdNumber, setStudentIdNumber] = useState('');
   const [studentIdPhoto, setStudentIdPhoto] = useState<string>('');
   const [permanentAddress, setPermanentAddress] = useState('');
   const [currentAddress, setCurrentAddress] = useState('');
   const [sameAddress, setSameAddress] = useState(false);
+  const [driverPhoto, setDriverPhoto] = useState<string>('');
   const [passportPhoto, setPassportPhoto] = useState<string>('');
   const [licensePhoto, setLicensePhoto] = useState<string>('');
+  const [panNumber, setPanNumber] = useState('');
+  const [panPhoto, setPanPhoto] = useState<string>('');
   const [aadhaarNumber, setAadhaarNumber] = useState('');
   const [aadhaarPhoto, setAadhaarPhoto] = useState<string>('');
+  const [showPendingModal, setShowPendingModal] = useState<boolean>(false);
+  const [pendingNoticeData, setPendingNoticeData] = useState<any>(null);
 
-  const handlePickDocument = (type: 'passport' | 'license' | 'aadhaar' | 'student_id') => {
+  const handlePickDocument = (type: 'driver_photo' | 'passport' | 'license' | 'pan' | 'aadhaar' | 'student_id') => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
       const input = document.createElement('input');
       input.type = 'file';
-      input.accept = 'image/*';
+      if (type === 'driver_photo') {
+        input.accept = 'image/jpeg,image/jpg';
+      } else {
+        input.accept = 'image/*';
+      }
       input.onchange = (e: any) => {
         const file = e.target?.files?.[0];
         if (file) {
+          if (type === 'driver_photo' && !file.type.includes('jpeg') && !file.type.includes('jpg')) {
+            Alert.alert('JPEG Required', 'Please upload driver photo in JPEG (.jpg / .jpeg) format.');
+            return;
+          }
           const reader = new FileReader();
           reader.onload = () => {
             const res = reader.result as string;
-            if (type === 'passport') setPassportPhoto(res);
-            else if (type === 'license') setLicensePhoto(res);
-            else if (type === 'student_id') setStudentIdPhoto(res);
-            else setAadhaarPhoto(res);
+            if (type === 'driver_photo' || type === 'passport') {
+              setDriverPhoto(res);
+              setPassportPhoto(res);
+            } else if (type === 'license') {
+              setLicensePhoto(res);
+            } else if (type === 'pan') {
+              setPanPhoto(res);
+            } else if (type === 'student_id') {
+              setStudentIdPhoto(res);
+            } else {
+              setAadhaarPhoto(res);
+            }
           };
           reader.readAsDataURL(file);
         }
@@ -171,16 +196,6 @@ export default function LoginScreen() {
         setError('Please enter your full name to create an account');
         return;
       }
-      if (role === 'rider') {
-        if (!licenseNumber.trim()) {
-          setError('Driving License number is required for Driver registration');
-          return;
-        }
-        if (!vehiclePlate.trim()) {
-          setError('Vehicle registration plate number is required');
-          return;
-        }
-      }
     }
 
     if (isResend) {
@@ -207,6 +222,17 @@ export default function LoginScreen() {
         }
       } catch {
         // Continue if findAccount fails so standard verify handles it
+      }
+    } else if (viewMode === 'signup') {
+      try {
+        const checkAcc = await api.auth.findAccount(fullPhone);
+        if (checkAcc.found) {
+          setError('Yeh mobile number pehle se registered hai. Kripya Login karein ya naya number daalein.');
+          setLoading(false);
+          return;
+        }
+      } catch {
+        // Continue
       }
     }
 
@@ -258,21 +284,37 @@ export default function LoginScreen() {
             return;
           }
 
-          // If rider application is already submitted and pending admin janch/review:
+          // If rider application is already submitted and pending admin approval:
+          // ENFORCE 7-DAY WAIT: Intercept and show pending modal, block dashboard entry!
           if (tokenData.user.rider_profile?.status === 'pending') {
-            redirectByRole('rider');
+            setPendingNoticeData({
+              name: tokenData.user.full_name,
+              phone: tokenData.user.phone_number,
+              license: tokenData.user.rider_profile?.license_number,
+              plate: tokenData.user.rider_profile?.vehicle_plate,
+              state: tokenData.user.rider_profile?.driver_state,
+              city: tokenData.user.rider_profile?.driver_city,
+              submittedAt: tokenData.user.rider_profile?.created_at || new Date().toISOString(),
+            });
+            setShowPendingModal(true);
+            setLoading(false);
             return;
           }
 
           // Otherwise (new driver, incomplete KYC, or rejected):
-          // Open the Driver Registration & KYC Form right after login!
+          // Open the Driver Registration & KYC Form right after OTP verification!
           setRole('rider');
           if (tokenData.user.full_name && tokenData.user.full_name !== 'Rider User' && tokenData.user.full_name.trim().toLowerCase() !== 'rider') {
             setFullName(tokenData.user.full_name);
           }
           if (tokenData.user.email) setEmail(tokenData.user.email);
+          if (tokenData.user.rider_profile?.driver_state) setDriverState(tokenData.user.rider_profile.driver_state);
+          if (tokenData.user.rider_profile?.driver_city) setDriverCity(tokenData.user.rider_profile.driver_city);
           if (tokenData.user.rider_profile?.license_number) {
             setLicenseNumber(tokenData.user.rider_profile.license_number);
+          }
+          if (tokenData.user.rider_profile?.pan_number) {
+            setPanNumber(tokenData.user.rider_profile.pan_number);
           }
           if (tokenData.user.rider_profile?.aadhaar_number) {
             setAadhaarNumber(tokenData.user.rider_profile.aadhaar_number);
@@ -283,11 +325,16 @@ export default function LoginScreen() {
           if (tokenData.user.rider_profile?.current_address) {
             setCurrentAddress(tokenData.user.rider_profile.current_address);
           }
-          if (tokenData.user.rider_profile?.passport_photo) {
-            setPassportPhoto(tokenData.user.rider_profile.passport_photo);
+          if (tokenData.user.rider_profile?.driver_photo || tokenData.user.rider_profile?.passport_photo) {
+            const p = tokenData.user.rider_profile?.driver_photo || tokenData.user.rider_profile?.passport_photo;
+            setDriverPhoto(p);
+            setPassportPhoto(p);
           }
           if (tokenData.user.rider_profile?.license_photo) {
             setLicensePhoto(tokenData.user.rider_profile.license_photo);
+          }
+          if (tokenData.user.rider_profile?.pan_photo) {
+            setPanPhoto(tokenData.user.rider_profile.pan_photo);
           }
           if (tokenData.user.rider_profile?.aadhaar_photo) {
             setAadhaarPhoto(tokenData.user.rider_profile.aadhaar_photo);
@@ -316,7 +363,7 @@ export default function LoginScreen() {
     }
   };
 
-  // 3. Complete Name & Profile Setup after OTP verification
+  // 3. Complete Driver Registration / Passenger Profile Setup after OTP verification
   const handleCompleteNameEntry = async () => {
     if (!fullName.trim()) {
       setError('Please enter your full name to continue');
@@ -340,84 +387,107 @@ export default function LoginScreen() {
       };
 
       if (role === 'rider') {
-        if (riderServiceType === 'CAMPUS') {
-          const unisToSave = servedUniversities.trim() || collegeName.trim();
-          if (!unisToSave) {
-            setError('Please select at least one Gujarat University, College or School');
-            setLoading(false);
-            return;
-          }
-          if (!vehiclePlate.trim()) {
-            setError('Please enter your Vehicle Number (Gadi Number)');
-            setLoading(false);
-            return;
-          }
-          const cleanAadhaar = aadhaarNumber.replace(/\D/g, '');
-          if (!cleanAadhaar || cleanAadhaar.length < 12) {
-            setError('Please enter your complete 12-digit Aadhaar Card number');
-            setLoading(false);
-            return;
-          }
-          if (!studentIdNumber.trim()) {
-            setError('Please enter your Student ID Card Number or Roll Number');
-            setLoading(false);
-            return;
-          }
-
-          payload.rider_service_type = 'CAMPUS';
-          payload.college_name = unisToSave.split(',')[0].trim();
-          payload.served_universities = unisToSave;
-          payload.academic_year = academicYear.trim() || 'Current Academic Year';
-          payload.student_id_number = studentIdNumber.trim();
-          payload.student_id_photo = studentIdPhoto || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400';
-          payload.aadhaar_number = aadhaarNumber.trim();
-          payload.aadhaar_photo = aadhaarPhoto || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400';
-          payload.vehicle_category = vehicleCategory;
-          payload.vehicle_plate = vehiclePlate.trim().toUpperCase();
-          payload.vehicle_model = vehicleModel.trim() || 'Hero Splendor Plus';
-          payload.license_number = licenseNumber.trim() ? licenseNumber.trim().toUpperCase() : `CAMPUS-ID-${cleanAadhaar.slice(-6)}`;
-        } else {
-          if (!licenseNumber.trim()) {
-            setError('Please enter your Driving License number');
-            setLoading(false);
-            return;
-          }
-          const cleanAadhaar = aadhaarNumber.replace(/\D/g, '');
-          if (!cleanAadhaar || cleanAadhaar.length < 12) {
-            setError('Please enter your complete 12-digit Aadhaar Card number');
-            setLoading(false);
-            return;
-          }
-          if (!vehiclePlate.trim()) {
-            setError('Please enter your Vehicle Plate number (e.g. KA-01-EK-8892)');
-            setLoading(false);
-            return;
-          }
-          if (!permanentAddress.trim()) {
-            setError('Please enter your Permanent Address');
-            setLoading(false);
-            return;
-          }
-
-          payload.rider_service_type = 'REGULAR';
-          payload.served_universities = servedUniversities.trim() || 'Gujarat City Routes';
-          payload.college_name = servedUniversities.trim() ? servedUniversities.split(',')[0].trim() : undefined;
-          payload.license_number = licenseNumber.trim().toUpperCase();
-          payload.aadhaar_number = aadhaarNumber.trim();
-          payload.vehicle_category = vehicleCategory;
-          payload.vehicle_plate = vehiclePlate.trim().toUpperCase();
-          payload.vehicle_model = vehicleModel.trim() || 'Hero Splendor Plus';
-          payload.permanent_address = permanentAddress.trim();
-          payload.current_address = sameAddress ? permanentAddress.trim() : (currentAddress.trim() || permanentAddress.trim());
-          payload.passport_photo = passportPhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300';
-          payload.license_photo = licensePhoto || 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300';
-          payload.aadhaar_photo = aadhaarPhoto || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300';
+        if (!driverState.trim()) {
+          setError('Kripya apna State select karein (e.g. Gujarat, Bihar, Delhi, etc.)');
+          setLoading(false);
+          return;
         }
+        if (!driverCity.trim()) {
+          setError('Kripya apna City select karein');
+          setLoading(false);
+          return;
+        }
+        const unis = servedUniversities.trim() || collegeName.trim();
+        if (!unis) {
+          setError(`Kripya apne ${driverCity} ke Universities, Colleges ya Route select karein`);
+          setLoading(false);
+          return;
+        }
+        if (!licenseNumber.trim()) {
+          setError('Driving License number is required');
+          setLoading(false);
+          return;
+        }
+        if (!licensePhoto) {
+          setError('Please upload your Driving License document photo');
+          setLoading(false);
+          return;
+        }
+        if (!panNumber.trim()) {
+          setError('PAN Card number is required');
+          setLoading(false);
+          return;
+        }
+        if (!panPhoto) {
+          setError('Please upload your PAN Card document photo');
+          setLoading(false);
+          return;
+        }
+        const cleanAadhaar = aadhaarNumber.replace(/\D/g, '');
+        if (!cleanAadhaar || cleanAadhaar.length < 12) {
+          setError('Please enter your complete 12-digit Aadhaar Card number');
+          setLoading(false);
+          return;
+        }
+        if (!aadhaarPhoto) {
+          setError('Please upload your Aadhaar Card document photo');
+          setLoading(false);
+          return;
+        }
+        const chosenPhoto = driverPhoto || passportPhoto;
+        if (!chosenPhoto) {
+          setError('Please upload Driver Photo in JPEG format (.jpg/.jpeg)');
+          setLoading(false);
+          return;
+        }
+        if (!vehiclePlate.trim()) {
+          setError('Please enter your Vehicle Registration Plate number (Gadi Number)');
+          setLoading(false);
+          return;
+        }
+        if (!permanentAddress.trim()) {
+          setError('Please enter your Permanent Address');
+          setLoading(false);
+          return;
+        }
+
+        payload.driver_state = driverState.trim();
+        payload.driver_city = driverCity.trim();
+        payload.served_universities = unis;
+        payload.college_name = unis.split(',')[0].trim();
+        payload.license_number = licenseNumber.trim().toUpperCase();
+        payload.license_photo = licensePhoto;
+        payload.pan_number = panNumber.trim().toUpperCase();
+        payload.pan_photo = panPhoto;
+        payload.aadhaar_number = aadhaarNumber.trim();
+        payload.aadhaar_photo = aadhaarPhoto;
+        payload.driver_photo = chosenPhoto;
+        payload.passport_photo = chosenPhoto;
+        payload.vehicle_category = vehicleCategory;
+        payload.vehicle_plate = vehiclePlate.trim().toUpperCase();
+        payload.vehicle_model = vehicleModel.trim() || 'Hero Splendor Plus';
+        payload.permanent_address = permanentAddress.trim();
+        payload.current_address = sameAddress ? permanentAddress.trim() : (currentAddress.trim() || permanentAddress.trim());
+        payload.status = 'PENDING';
       }
 
       const regResp = await api.auth.register(payload);
       setAuth(regResp.user, regResp.access_token);
-      redirectByRole(regResp.user.role);
+
+      if (role === 'rider') {
+        setPendingNoticeData({
+          name: regResp.user.full_name,
+          phone: regResp.user.phone_number,
+          license: licenseNumber.trim().toUpperCase(),
+          plate: vehiclePlate.trim().toUpperCase(),
+          state: driverState,
+          city: driverCity,
+          submittedAt: new Date().toISOString(),
+        });
+        setShowPendingModal(true);
+      } else {
+        redirectByRole(regResp.user.role);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to submit registration. Please try again.');
     } finally {
@@ -994,237 +1064,25 @@ export default function LoginScreen() {
                 />
               </View>
 
-              {/* Driver Specific Fields */}
+              {/* Driver Partner Simple Step 1 Notice */}
               {role === 'rider' && (
-                <View style={styles.driverSectionBox}>
-                  <Text style={styles.driverSectionTitle}>DRIVER SERVICE TYPE & SCOPE</Text>
-
-                  {/* Rider Service Type Choice */}
-                  <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
-                    <TouchableOpacity
-                      style={[
-                        styles.roleChip,
-                        { flex: 1, paddingVertical: 12, justifyContent: 'center' },
-                        riderServiceType === 'REGULAR' && styles.roleChipActive,
-                      ]}
-                      onPress={() => setRiderServiceType('REGULAR')}
-                    >
-                      <MaterialCommunityIcons
-                        name="taxi"
-                        size={16}
-                        color={riderServiceType === 'REGULAR' ? '#ffffff' : '#64748b'}
-                      />
-                      <Text style={[styles.roleChipText, riderServiceType === 'REGULAR' && styles.roleChipTextActive]}>
-                        🚕 City Driver
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={[
-                        styles.roleChip,
-                        { flex: 1, paddingVertical: 12, justifyContent: 'center' },
-                        riderServiceType === 'CAMPUS' && styles.roleChipActive,
-                      ]}
-                      onPress={() => setRiderServiceType('CAMPUS')}
-                    >
-                      <Ionicons
-                        name="school"
-                        size={16}
-                        color={riderServiceType === 'CAMPUS' ? '#ffffff' : '#64748b'}
-                      />
-                      <Text style={[styles.roleChipText, riderServiceType === 'CAMPUS' && styles.roleChipTextActive]}>
-                        🎓 Campus Driver
-                      </Text>
-                    </TouchableOpacity>
+                <View style={{
+                  backgroundColor: '#eff6ff',
+                  borderColor: '#93c5fd',
+                  borderWidth: 1.5,
+                  borderRadius: 14,
+                  padding: 14,
+                  marginVertical: 12,
+                }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <MaterialCommunityIcons name="shield-check" size={20} color="#2563eb" />
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: '#1e40af' }}>
+                      Driver Partner Registration (Step 1 of 2)
+                    </Text>
                   </View>
-
-                  {riderServiceType === 'CAMPUS' ? (
-                    <View style={{ marginBottom: 14, backgroundColor: '#f0fdf4', padding: 12, borderRadius: 12, borderWidth: 1.5, borderColor: '#86efac' }}>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                        <Text style={[styles.inputFieldLabel, { color: '#166534', marginTop: 0, fontWeight: '800' }]}>
-                          Served Gujarat Universities & Schools *
-                        </Text>
-                        <TouchableOpacity
-                          onPress={() => setShowUniPickerModal(true)}
-                          style={{
-                            backgroundColor: '#16a34a',
-                            paddingHorizontal: 10,
-                            paddingVertical: 5,
-                            borderRadius: 8,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                          }}
-                        >
-                          <Ionicons name="list" size={14} color="#ffffff" style={{ marginRight: 4 }} />
-                          <Text style={{ fontSize: 11, fontWeight: '700', color: '#ffffff' }}>Browse Gujarat List</Text>
-                        </TouchableOpacity>
-                      </View>
-
-                      {/* Clickable Card to open Modal */}
-                      <TouchableOpacity
-                        onPress={() => setShowUniPickerModal(true)}
-                        activeOpacity={0.8}
-                        style={{
-                          backgroundColor: '#ffffff',
-                          borderWidth: 1.5,
-                          borderColor: '#86efac',
-                          borderRadius: 10,
-                          padding: 10,
-                          marginTop: 4,
-                        }}
-                      >
-                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
-                            <Ionicons name="school" size={18} color="#16a34a" style={{ marginRight: 8 }} />
-                            <Text style={{ fontSize: 13, fontWeight: '700', color: '#15803d' }}>
-                              {servedUniversities.split(',').filter(s => s.trim()).length > 0
-                                ? `${servedUniversities.split(',').filter(s => s.trim()).length} Institutions Selected (Tap to edit)`
-                                : 'Select Gujarat Universities / Colleges / Schools...'}
-                            </Text>
-                          </View>
-                          <Ionicons name="chevron-forward" size={18} color="#16a34a" />
-                        </View>
-
-                        {/* Selected Chips inside card */}
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-                          {servedUniversities
-                            .split(',')
-                            .map((u) => u.trim())
-                            .filter(Boolean)
-                            .map((uName, uIdx) => (
-                              <View
-                                key={uIdx}
-                                style={{
-                                  backgroundColor: '#dcfce7',
-                                  borderWidth: 1,
-                                  borderColor: '#86efac',
-                                  borderRadius: 16,
-                                  paddingHorizontal: 8,
-                                  paddingVertical: 3,
-                                  flexDirection: 'row',
-                                  alignItems: 'center',
-                                }}
-                              >
-                                <Ionicons name="checkmark-circle" size={12} color="#16a34a" style={{ marginRight: 4 }} />
-                                <Text style={{ fontSize: 11, fontWeight: '600', color: '#166534', maxWidth: 220 }} numberOfLines={1}>
-                                  {uName}
-                                </Text>
-                              </View>
-                            ))}
-                        </View>
-                      </TouchableOpacity>
-
-                      <Text style={{ fontSize: 11, color: '#15803d', marginTop: 8 }}>
-                        💡 Tap above to search & select multiple Gujarat universities, colleges, and schools or add a new one via "Other".
-                      </Text>
-                    </View>
-                  ) : (
-                    <View style={{ marginBottom: 12, backgroundColor: '#f8fafc', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0' }}>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Text style={{ fontSize: 11, color: '#475569', fontWeight: '600', flex: 1 }}>
-                          🚕 Regular City Driver operates across all general city routes, airport corridors, and universities.
-                        </Text>
-                        <TouchableOpacity
-                          onPress={() => setShowUniPickerModal(true)}
-                          style={{
-                            backgroundColor: '#2563eb',
-                            paddingHorizontal: 8,
-                            paddingVertical: 4,
-                            borderRadius: 6,
-                            marginLeft: 8,
-                          }}
-                        >
-                          <Text style={{ fontSize: 10, fontWeight: '700', color: '#ffffff' }}>Add Campuses</Text>
-                        </TouchableOpacity>
-                      </View>
-                      {servedUniversities.trim() && (
-                        <Text style={{ fontSize: 10, color: '#0284c7', marginTop: 4 }}>
-                          Included hubs: {servedUniversities}
-                        </Text>
-                      )}
-                    </View>
-                  )}
-
-                  <Text style={styles.driverSectionTitle}>DRIVER VEHICLE & LICENSE DETAILS</Text>
-
-                  <Text style={styles.inputFieldLabel}>Driving License *</Text>
-                  <View style={styles.textInputBox}>
-                    <TextInput
-                      style={styles.textInputInside}
-                      placeholder="e.g. DL-04-2024-001234"
-                      placeholderTextColor="#94a3b8"
-                      autoCapitalize="characters"
-                      value={licenseNumber}
-                      onChangeText={setLicenseNumber}
-                    />
-                  </View>
-
-                  <Text style={styles.inputFieldLabel}>Vehicle Type / Tier *</Text>
-                  <View style={styles.vehicleCategorySelector}>
-                    {[
-                      { id: 'bike', label: 'General Bike', desc: 'Splendor, Activa, Platina (₹7/km)', defaultModel: 'Hero Splendor Plus' },
-                      { id: 'bullet', label: 'Pro Bike', desc: 'Royal Enfield Bullet, KTM, Hunter (₹13/km)', defaultModel: 'Royal Enfield Bullet 350' },
-                      { id: 'auto', label: 'Auto Rickshaw', desc: 'Bajaj 3-Wheeler (₹10/km)', defaultModel: 'Bajaj RE Auto' },
-                      { id: 'car', label: 'Car / Cab', desc: 'Swift Dzire, Sedan (₹15/km)', defaultModel: 'Maruti Dzire' },
-                    ].map((item) => (
-                      <TouchableOpacity
-                        key={item.id}
-                        style={[
-                          styles.vehCategoryOption,
-                          vehicleCategory === item.id && styles.vehCategoryOptionActive,
-                        ]}
-                        onPress={() => {
-                          setVehicleCategory(item.id as any);
-                          setVehicleModel(item.defaultModel);
-                        }}
-                      >
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={[
-                              styles.vehCategoryTitle,
-                              vehicleCategory === item.id && styles.vehCategoryTitleActive,
-                            ]}
-                          >
-                            {item.label}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.vehCategoryDesc,
-                              vehicleCategory === item.id && styles.vehCategoryDescActive,
-                            ]}
-                          >
-                            {item.desc}
-                          </Text>
-                        </View>
-                        {vehicleCategory === item.id && (
-                          <Ionicons name="checkmark-circle" size={18} color="#2563EB" />
-                        )}
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-
-                  <Text style={styles.inputFieldLabel}>Vehicle Plate Number *</Text>
-                  <View style={styles.textInputBox}>
-                    <TextInput
-                      style={styles.textInputInside}
-                      placeholder="e.g. KA-01-EK-8892"
-                      placeholderTextColor="#94a3b8"
-                      autoCapitalize="characters"
-                      value={vehiclePlate}
-                      onChangeText={setVehiclePlate}
-                    />
-                  </View>
-
-                  <Text style={styles.inputFieldLabel}>Vehicle Model / Make</Text>
-                  <View style={styles.textInputBox}>
-                    <TextInput
-                      style={styles.textInputInside}
-                      placeholder="e.g. Royal Enfield Bullet 350, Splendor"
-                      placeholderTextColor="#94a3b8"
-                      value={vehicleModel}
-                      onChangeText={setVehicleModel}
-                    />
-                  </View>
+                  <Text style={{ fontSize: 12, color: '#3b82f6', lineHeight: 18 }}>
+                    Driver onboarding is simple! Enter your Full Name and Mobile Number to receive SMS OTP. Immediately after OTP verification, your comprehensive Driver KYC &amp; Verification Form (State, City, College / Campus, Driving License, PAN, Aadhaar &amp; Photo) will open.
+                  </Text>
                 </View>
               )}
 
@@ -1486,654 +1344,574 @@ export default function LoginScreen() {
                 />
               </View>
 
-              {/* Driver partner registration options if driver selected */}
+              {/* Driver Partner KYC and Registration Form */}
               {role === 'rider' && (
                 <View style={styles.driverSectionBox}>
-                  <Text style={styles.driverSectionTitle}>CHOOSE DRIVER REGISTRATION TYPE</Text>
-                  
-                  {/* 2 Options: Campus Registration vs Permanent Registration */}
-                  <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
-                    <TouchableOpacity
-                      style={[
-                        {
-                          flex: 1,
-                          padding: 12,
-                          borderRadius: 14,
-                          borderWidth: 2,
-                          borderColor: riderServiceType === 'CAMPUS' ? '#10b981' : '#e2e8f0',
-                          backgroundColor: riderServiceType === 'CAMPUS' ? '#f0fdf4' : '#ffffff',
-                          alignItems: 'center',
-                        },
-                      ]}
-                      onPress={() => setRiderServiceType('CAMPUS')}
-                      activeOpacity={0.8}
-                    >
-                      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: riderServiceType === 'CAMPUS' ? '#10b981' : '#f1f5f9', alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
-                        <Ionicons name="school" size={20} color={riderServiceType === 'CAMPUS' ? '#ffffff' : '#64748b'} />
-                      </View>
-                      <Text style={{ fontSize: 13, fontWeight: '800', color: riderServiceType === 'CAMPUS' ? '#065f46' : '#0f172a', textAlign: 'center' }}>
-                        Campus Reg
+                  {/* Banner */}
+                  <View style={{
+                    backgroundColor: '#eff6ff',
+                    borderColor: '#93c5fd',
+                    borderWidth: 1.5,
+                    borderRadius: 12,
+                    padding: 12,
+                    marginBottom: 16,
+                  }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      <Ionicons name="shield-checkmark" size={18} color="#2563eb" />
+                      <Text style={{ fontSize: 13, fontWeight: '800', color: '#1e40af' }}>
+                        Driver Partner KYC &amp; Verification Form
                       </Text>
-                      <Text style={{ fontSize: 10, color: '#047857', fontWeight: '700', marginTop: 4, backgroundColor: '#dcfce7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
-                        ⚡ Instant Approval
-                      </Text>
-                      <Text style={{ fontSize: 10, color: '#64748b', textAlign: 'center', marginTop: 4 }}>
-                        For Students & College Staff
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={[
-                        {
-                          flex: 1,
-                          padding: 12,
-                          borderRadius: 14,
-                          borderWidth: 2,
-                          borderColor: riderServiceType === 'REGULAR' ? '#2563EB' : '#e2e8f0',
-                          backgroundColor: riderServiceType === 'REGULAR' ? '#eff6ff' : '#ffffff',
-                          alignItems: 'center',
-                        },
-                      ]}
-                      onPress={() => setRiderServiceType('REGULAR')}
-                      activeOpacity={0.8}
-                    >
-                      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: riderServiceType === 'REGULAR' ? '#2563EB' : '#f1f5f9', alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
-                        <Ionicons name="car" size={20} color={riderServiceType === 'REGULAR' ? '#ffffff' : '#64748b'} />
-                      </View>
-                      <Text style={{ fontSize: 13, fontWeight: '800', color: riderServiceType === 'REGULAR' ? '#1e40af' : '#0f172a', textAlign: 'center' }}>
-                        Permanent Reg
-                      </Text>
-                      <Text style={{ fontSize: 10, color: '#1d4ed8', fontWeight: '700', marginTop: 4, backgroundColor: '#dbeafe', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
-                        📋 Admin Janch
-                      </Text>
-                      <Text style={{ fontSize: 10, color: '#64748b', textAlign: 'center', marginTop: 4 }}>
-                        Commercial Taxi & Auto
-                      </Text>
-                    </TouchableOpacity>
+                    </View>
+                    <Text style={{ fontSize: 11, color: '#3b82f6', lineHeight: 16 }}>
+                      Government ID &amp; document verification takes up to 7 working days. Once submitted, your application will be reviewed by admin before you can access the driver dashboard.
+                    </Text>
                   </View>
 
-                  {/* CAMPUS REGISTRATION FORM */}
-                  {riderServiceType === 'CAMPUS' ? (
-                    <View>
-                      <View style={{ backgroundColor: '#ecfdf5', borderRadius: 10, padding: 10, marginBottom: 14, borderWidth: 1, borderColor: '#a7f3d0', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <Ionicons name="flash" size={18} color="#059669" />
-                        <Text style={{ fontSize: 11, color: '#065f46', fontWeight: '600', flex: 1 }}>
-                          Zero Admin Wait! Campus drivers are auto-approved instantly with Student ID and Aadhaar Card.
-                        </Text>
-                      </View>
-
-                      {/* Served Gujarat Universities, Colleges & Schools Selector */}
-                      <View style={{ marginBottom: 14, backgroundColor: '#f0fdf4', padding: 12, borderRadius: 12, borderWidth: 1.5, borderColor: '#86efac' }}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                          <Text style={[styles.inputFieldLabel, { color: '#166534', marginTop: 0, fontWeight: '800' }]}>
-                            Served Gujarat Universities & Schools *
-                          </Text>
+                  {/* 1. STATE SELECTION */}
+                  <Text style={styles.inputFieldLabel}>1. SELECT OPERATING STATE *</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }}>
+                    <View style={{ flexDirection: 'row', gap: 8, paddingVertical: 4 }}>
+                      {INDIAN_STATES_CITIES.map((st) => {
+                        const isSelected = driverState === st.state;
+                        return (
                           <TouchableOpacity
-                            onPress={() => setShowUniPickerModal(true)}
-                            style={{
-                              backgroundColor: '#16a34a',
-                              paddingHorizontal: 10,
-                              paddingVertical: 5,
-                              borderRadius: 8,
-                              flexDirection: 'row',
-                              alignItems: 'center',
+                            key={st.state}
+                            style={[
+                              styles.roleChip,
+                              isSelected && styles.roleChipActive,
+                              { paddingHorizontal: 12, paddingVertical: 8 }
+                            ]}
+                            onPress={() => {
+                              setDriverState(st.state);
+                              setDriverCity('');
+                              setServedUniversities('');
                             }}
                           >
-                            <Ionicons name="list" size={14} color="#ffffff" style={{ marginRight: 4 }} />
-                            <Text style={{ fontSize: 11, fontWeight: '700', color: '#ffffff' }}>Browse Gujarat List</Text>
+                            <Ionicons
+                              name="location-outline"
+                              size={14}
+                              color={isSelected ? '#ffffff' : '#64748b'}
+                              style={{ marginRight: 4 }}
+                            />
+                            <Text style={[styles.roleChipText, isSelected && styles.roleChipTextActive]}>
+                              {st.state}
+                            </Text>
                           </TouchableOpacity>
-                        </View>
+                        );
+                      })}
+                    </View>
+                  </ScrollView>
 
-                        {/* Clickable Card to open Modal */}
+                  {/* 2. CITY SELECTION */}
+                  {driverState ? (
+                    <View style={{ marginBottom: 14 }}>
+                      <Text style={styles.inputFieldLabel}>
+                        2. SELECT OPERATING CITY IN {driverState.toUpperCase()} *
+                      </Text>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+                        {INDIAN_STATES_CITIES.find((s) => s.state === driverState)?.cities.map((ct) => {
+                          const isCitySelected = driverCity === ct;
+                          return (
+                            <TouchableOpacity
+                              key={ct}
+                              style={[
+                                styles.roleChip,
+                                isCitySelected && { backgroundColor: '#10b981', borderColor: '#059669' },
+                                { paddingHorizontal: 12, paddingVertical: 8 }
+                              ]}
+                              onPress={() => {
+                                setDriverCity(ct);
+                              }}
+                            >
+                              <Ionicons
+                                name="business-outline"
+                                size={14}
+                                color={isCitySelected ? '#ffffff' : '#64748b'}
+                                style={{ marginRight: 4 }}
+                              />
+                              <Text
+                                style={[
+                                  styles.roleChipText,
+                                  isCitySelected && { color: '#ffffff', fontWeight: '800' }
+                                ]}
+                              >
+                                {ct}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  ) : null}
+
+                  {/* 3. UNIVERSITIES, COLLEGES & SCHOOLS SELECTION */}
+                  {driverCity ? (
+                    <View style={{
+                      backgroundColor: '#f0fdf4',
+                      borderColor: '#86efac',
+                      borderWidth: 1.5,
+                      borderRadius: 12,
+                      padding: 12,
+                      marginBottom: 16
+                    }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <Text style={[styles.inputFieldLabel, { color: '#166534', marginTop: 0, fontWeight: '800' }]}>
+                          3. SERVED CAMPUSES &amp; HUBS IN {driverCity.toUpperCase()} *
+                        </Text>
                         <TouchableOpacity
                           onPress={() => setShowUniPickerModal(true)}
-                          activeOpacity={0.8}
                           style={{
-                            backgroundColor: '#ffffff',
-                            borderWidth: 1.5,
-                            borderColor: '#86efac',
-                            borderRadius: 10,
-                            padding: 10,
-                            marginTop: 4,
+                            backgroundColor: '#16a34a',
+                            paddingHorizontal: 10,
+                            paddingVertical: 5,
+                            borderRadius: 8,
+                            flexDirection: 'row',
+                            alignItems: 'center',
                           }}
                         >
-                          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
-                              <Ionicons name="school" size={18} color="#16a34a" style={{ marginRight: 8 }} />
-                              <Text style={{ fontSize: 13, fontWeight: '700', color: '#15803d' }}>
-                                {servedUniversities.split(',').filter(s => s.trim()).length > 0
-                                  ? `${servedUniversities.split(',').filter(s => s.trim()).length} Institutions Selected (Tap to edit)`
-                                  : 'Select Gujarat Universities / Colleges / Schools...'}
-                              </Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={18} color="#16a34a" />
-                          </View>
-
-                          {/* Selected Chips inside card */}
-                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-                            {servedUniversities
-                              .split(',')
-                              .map((u) => u.trim())
-                              .filter(Boolean)
-                              .map((uName, uIdx) => (
-                                <View
-                                  key={uIdx}
-                                  style={{
-                                    backgroundColor: '#dcfce7',
-                                    borderWidth: 1,
-                                    borderColor: '#86efac',
-                                    borderRadius: 16,
-                                    paddingHorizontal: 8,
-                                    paddingVertical: 3,
-                                    flexDirection: 'row',
-                                    alignItems: 'center',
-                                  }}
-                                >
-                                  <Ionicons name="checkmark-circle" size={12} color="#16a34a" style={{ marginRight: 4 }} />
-                                  <Text style={{ fontSize: 11, fontWeight: '600', color: '#166534', maxWidth: 220 }} numberOfLines={1}>
-                                    {uName}
-                                  </Text>
-                                </View>
-                              ))}
-                          </View>
-                        </TouchableOpacity>
-
-                        <Text style={{ fontSize: 11, color: '#15803d', marginTop: 8 }}>
-                          💡 Tap above to search & select multiple Gujarat universities, colleges, and schools or add a new one via "Other".
-                        </Text>
-                      </View>
-
-                      <Text style={styles.inputFieldLabel}>Academic Year / Validity *</Text>
-                      <View style={styles.textInputBox}>
-                        <Ionicons name="calendar-outline" size={16} color="#059669" style={{ marginRight: 8 }} />
-                        <TextInput
-                          style={styles.textInputInside}
-                          placeholder="e.g. Final Year (2024-2025) / 3rd Year"
-                          placeholderTextColor="#94a3b8"
-                          value={academicYear}
-                          onChangeText={setAcademicYear}
-                        />
-                      </View>
-
-                      <Text style={styles.inputFieldLabel}>Vehicle Type / Tier *</Text>
-                      <View style={styles.vehicleCategorySelector}>
-                        {[
-                          { id: 'bike', label: 'Bike / Scooter', desc: 'Splendor, Activa, Platina', defaultModel: 'Hero Splendor Plus' },
-                          { id: 'bullet', label: 'Pro Bike', desc: 'Bullet, Duke, Hunter', defaultModel: 'Royal Enfield Bullet 350' },
-                          { id: 'auto', label: 'Auto Rickshaw', desc: 'Bajaj 3-Wheeler', defaultModel: 'Bajaj RE Auto' },
-                          { id: 'car', label: 'Car / Cab', desc: 'Swift Dzire, Sedan', defaultModel: 'Maruti Dzire' },
-                        ].map((item) => (
-                          <TouchableOpacity
-                            key={item.id}
-                            style={[
-                              styles.vehCategoryOption,
-                              vehicleCategory === item.id && styles.vehCategoryOptionActive,
-                            ]}
-                            onPress={() => {
-                              setVehicleCategory(item.id as any);
-                              setVehicleModel(item.defaultModel);
-                            }}
-                          >
-                            <View style={{ flex: 1 }}>
-                              <Text
-                                style={[
-                                  styles.vehCategoryTitle,
-                                  vehicleCategory === item.id && styles.vehCategoryTitleActive,
-                                ]}
-                              >
-                                {item.label}
-                              </Text>
-                              <Text
-                                style={[
-                                  styles.vehCategoryDesc,
-                                  vehicleCategory === item.id && styles.vehCategoryDescActive,
-                                ]}
-                              >
-                                {item.desc}
-                              </Text>
-                            </View>
-                            {vehicleCategory === item.id && (
-                              <Ionicons name="checkmark-circle" size={18} color="#2563EB" />
-                            )}
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-
-                      <Text style={styles.inputFieldLabel}>Vehicle / Gadi Number *</Text>
-                      <View style={styles.textInputBox}>
-                        <Ionicons name="speedometer-outline" size={16} color="#059669" style={{ marginRight: 8 }} />
-                        <TextInput
-                          style={styles.textInputInside}
-                          placeholder="e.g. GJ-06-AB-1234"
-                          placeholderTextColor="#94a3b8"
-                          autoCapitalize="characters"
-                          value={vehiclePlate}
-                          onChangeText={setVehiclePlate}
-                        />
-                      </View>
-
-                      <Text style={styles.inputFieldLabel}>Student ID Card Number *</Text>
-                      <View style={styles.textInputBox}>
-                        <Ionicons name="id-card-outline" size={16} color="#059669" style={{ marginRight: 8 }} />
-                        <TextInput
-                          style={styles.textInputInside}
-                          placeholder="e.g. PU-2022-CSE-8941"
-                          placeholderTextColor="#94a3b8"
-                          autoCapitalize="characters"
-                          value={studentIdNumber}
-                          onChangeText={setStudentIdNumber}
-                        />
-                      </View>
-
-                      <Text style={styles.inputFieldLabel}>Upload Student ID Card Photo *</Text>
-                      <View style={styles.docUploadCard}>
-                        {studentIdPhoto ? (
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                            <Image source={{ uri: studentIdPhoto }} style={styles.licensePreviewThumb} />
-                            <View style={{ flex: 1 }}>
-                              <Text style={styles.docUploadedTitle}>✅ Student ID Card Uploaded</Text>
-                              <TouchableOpacity onPress={() => handlePickDocument('student_id')}>
-                                <Text style={styles.docChangeText}>Change Photo</Text>
-                              </TouchableOpacity>
-                            </View>
-                          </View>
-                        ) : (
-                          <View>
-                            <TouchableOpacity
-                              style={styles.docUploadBtn}
-                              onPress={() => handlePickDocument('student_id')}
-                              activeOpacity={0.8}
-                            >
-                              <Ionicons name="school-outline" size={22} color="#059669" />
-                              <Text style={[styles.docUploadBtnText, { color: '#059669' }]}>Upload Student ID (Front Photo)</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                              style={{
-                                marginTop: 6,
-                                alignSelf: 'center',
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                gap: 4,
-                                paddingVertical: 4,
-                                paddingHorizontal: 8,
-                                backgroundColor: '#f0fdf4',
-                                borderRadius: 6,
-                                borderWidth: 1,
-                                borderColor: '#bbf7d0',
-                              }}
-                              onPress={() =>
-                                setStudentIdPhoto('https://images.unsplash.com/photo-1544717305-2782549b5136?w=400')
-                              }
-                            >
-                              <Ionicons name="sparkles" size={12} color="#16a34a" />
-                              <Text style={{ fontSize: 11, fontWeight: '700', color: '#16a34a' }}>
-                                Use Sample Student ID
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
-                        )}
-                      </View>
-
-                      <Text style={styles.inputFieldLabel}>Aadhaar Card Number (12 Digits) *</Text>
-                      <View style={styles.textInputBox}>
-                        <Ionicons name="finger-print-outline" size={16} color="#0284c7" style={{ marginRight: 8 }} />
-                        <TextInput
-                          style={styles.textInputInside}
-                          placeholder="e.g. 5432 8901 2345"
-                          placeholderTextColor="#94a3b8"
-                          keyboardType="number-pad"
-                          maxLength={14}
-                          value={aadhaarNumber}
-                          onChangeText={(t) => {
-                            const clean = t.replace(/\D/g, '').slice(0, 12);
-                            const formatted = clean.replace(/(\d{4})(?=\d)/g, '$1 ');
-                            setAadhaarNumber(formatted);
-                          }}
-                        />
-                      </View>
-
-                      <Text style={styles.inputFieldLabel}>Upload Aadhaar Card (Front Photo) *</Text>
-                      <View style={styles.docUploadCard}>
-                        {aadhaarPhoto ? (
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                            <Image source={{ uri: aadhaarPhoto }} style={styles.licensePreviewThumb} />
-                            <View style={{ flex: 1 }}>
-                              <Text style={styles.docUploadedTitle}>✅ Aadhaar Card Uploaded</Text>
-                              <TouchableOpacity onPress={() => handlePickDocument('aadhaar')}>
-                                <Text style={styles.docChangeText}>Change Photo</Text>
-                              </TouchableOpacity>
-                            </View>
-                          </View>
-                        ) : (
-                          <View>
-                            <TouchableOpacity
-                              style={styles.docUploadBtn}
-                              onPress={() => handlePickDocument('aadhaar')}
-                              activeOpacity={0.8}
-                            >
-                              <Ionicons name="finger-print-outline" size={22} color="#0284c7" />
-                              <Text style={styles.docUploadBtnText}>Upload Aadhaar Document</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                              style={{
-                                marginTop: 6,
-                                alignSelf: 'center',
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                gap: 4,
-                                paddingVertical: 4,
-                                paddingHorizontal: 8,
-                                backgroundColor: '#f0fdf4',
-                                borderRadius: 6,
-                                borderWidth: 1,
-                                borderColor: '#bbf7d0',
-                              }}
-                              onPress={() =>
-                                setAadhaarPhoto('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300')
-                              }
-                            >
-                              <Ionicons name="sparkles" size={12} color="#16a34a" />
-                              <Text style={{ fontSize: 11, fontWeight: '700', color: '#16a34a' }}>
-                                Use Sample Aadhaar Document
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                  ) : (
-                    /* PERMANENT DRIVER REGISTRATION FORM */
-                    <View>
-                      <View style={{ backgroundColor: '#eff6ff', borderRadius: 10, padding: 10, marginBottom: 14, borderWidth: 1, borderColor: '#bfdbfe', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <Ionicons name="shield-checkmark" size={18} color="#2563EB" />
-                        <Text style={{ fontSize: 11, color: '#1e40af', fontWeight: '600', flex: 1 }}>
-                          Admin Janch Required: Permanent commercial drivers are verified by admin before taking regular trips.
-                        </Text>
-                      </View>
-
-                      <Text style={styles.inputFieldLabel}>Driving License Number *</Text>
-                      <View style={styles.textInputBox}>
-                        <Ionicons name="card-outline" size={16} color="#64748b" style={{ marginRight: 8 }} />
-                        <TextInput
-                          style={styles.textInputInside}
-                          placeholder="e.g. DL-04-2024-001234"
-                          placeholderTextColor="#94a3b8"
-                          autoCapitalize="characters"
-                          value={licenseNumber}
-                          onChangeText={setLicenseNumber}
-                        />
-                      </View>
-
-                      <Text style={styles.inputFieldLabel}>Aadhaar Card Number (12 Digits) *</Text>
-                      <View style={styles.textInputBox}>
-                        <Ionicons name="finger-print-outline" size={16} color="#0284c7" style={{ marginRight: 8 }} />
-                        <TextInput
-                          style={styles.textInputInside}
-                          placeholder="e.g. 5432 8901 2345"
-                          placeholderTextColor="#94a3b8"
-                          keyboardType="number-pad"
-                          maxLength={14}
-                          value={aadhaarNumber}
-                          onChangeText={(t) => {
-                            const clean = t.replace(/\D/g, '').slice(0, 12);
-                            const formatted = clean.replace(/(\d{4})(?=\d)/g, '$1 ');
-                            setAadhaarNumber(formatted);
-                          }}
-                        />
-                      </View>
-
-                      <Text style={styles.inputFieldLabel}>Vehicle Type / Tier *</Text>
-                      <View style={styles.vehicleCategorySelector}>
-                        {[
-                          { id: 'bike', label: 'General Bike', desc: 'Splendor, Activa, Platina (₹7/km)', defaultModel: 'Hero Splendor Plus' },
-                          { id: 'bullet', label: 'Pro Bike', desc: 'Bullet, KTM Duke, Hunter (₹13/km)', defaultModel: 'Royal Enfield Bullet 350' },
-                          { id: 'auto', label: 'Auto Rickshaw', desc: 'Bajaj 3-Wheeler (₹10/km)', defaultModel: 'Bajaj RE Auto' },
-                          { id: 'car', label: 'Car / Cab', desc: 'Swift Dzire, Sedan (₹15/km)', defaultModel: 'Maruti Dzire' },
-                        ].map((item) => (
-                          <TouchableOpacity
-                            key={item.id}
-                            style={[
-                              styles.vehCategoryOption,
-                              vehicleCategory === item.id && styles.vehCategoryOptionActive,
-                            ]}
-                            onPress={() => {
-                              setVehicleCategory(item.id as any);
-                              setVehicleModel(item.defaultModel);
-                            }}
-                          >
-                            <View style={{ flex: 1 }}>
-                              <Text
-                                style={[
-                                  styles.vehCategoryTitle,
-                                  vehicleCategory === item.id && styles.vehCategoryTitleActive,
-                                ]}
-                              >
-                                {item.label}
-                              </Text>
-                              <Text
-                                style={[
-                                  styles.vehCategoryDesc,
-                                  vehicleCategory === item.id && styles.vehCategoryDescActive,
-                                ]}
-                              >
-                                {item.desc}
-                              </Text>
-                            </View>
-                            {vehicleCategory === item.id && (
-                              <Ionicons name="checkmark-circle" size={18} color="#2563EB" />
-                            )}
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-
-                      <Text style={styles.inputFieldLabel}>Vehicle Plate Number *</Text>
-                      <View style={styles.textInputBox}>
-                        <TextInput
-                          style={styles.textInputInside}
-                          placeholder="e.g. KA-01-EK-8892"
-                          placeholderTextColor="#94a3b8"
-                          autoCapitalize="characters"
-                          value={vehiclePlate}
-                          onChangeText={setVehiclePlate}
-                        />
-                      </View>
-
-                      <Text style={styles.inputFieldLabel}>Permanent Address *</Text>
-                      <View style={[styles.textInputBox, { height: 64, alignItems: 'flex-start', paddingTop: 8 }]}>
-                        <TextInput
-                          style={[styles.textInputInside, { height: 48 }]}
-                          placeholder="e.g. Village/Town, Tehsil, District, State, PIN Code"
-                          placeholderTextColor="#94a3b8"
-                          multiline
-                          value={permanentAddress}
-                          onChangeText={setPermanentAddress}
-                        />
-                      </View>
-
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, marginBottom: 4 }}>
-                        <Text style={styles.inputFieldLabel}>Current / Operating Address *</Text>
-                        <TouchableOpacity
-                          style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
-                          onPress={() => {
-                            const next = !sameAddress;
-                            setSameAddress(next);
-                            if (next) setCurrentAddress(permanentAddress);
-                          }}
-                        >
-                          <Ionicons
-                            name={sameAddress ? 'checkbox' : 'square-outline'}
-                            size={16}
-                            color={sameAddress ? '#2563EB' : '#94a3b8'}
-                          />
-                          <Text style={{ fontSize: 12, color: '#2563EB', fontWeight: '700' }}>Same as Permanent</Text>
+                          <Ionicons name="list" size={14} color="#ffffff" style={{ marginRight: 4 }} />
+                          <Text style={{ fontSize: 11, fontWeight: '700', color: '#ffffff' }}>Browse {driverCity} List</Text>
                         </TouchableOpacity>
                       </View>
-                      {!sameAddress && (
-                        <View style={[styles.textInputBox, { height: 64, alignItems: 'flex-start', paddingTop: 8 }]}>
-                          <TextInput
-                            style={[styles.textInputInside, { height: 48 }]}
-                            placeholder="e.g. Current Room / Hostel / City Address"
-                            placeholderTextColor="#94a3b8"
-                            multiline
-                            value={currentAddress}
-                            onChangeText={setCurrentAddress}
-                          />
+
+                      <TouchableOpacity
+                        onPress={() => setShowUniPickerModal(true)}
+                        activeOpacity={0.8}
+                        style={{
+                          backgroundColor: '#ffffff',
+                          borderWidth: 1.5,
+                          borderColor: '#86efac',
+                          borderRadius: 10,
+                          padding: 10,
+                        }}
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
+                            <Ionicons name="school" size={18} color="#16a34a" style={{ marginRight: 8 }} />
+                            <Text style={{ fontSize: 13, fontWeight: '700', color: '#15803d' }}>
+                              {servedUniversities.split(',').filter(s => s.trim()).length > 0
+                                ? `${servedUniversities.split(',').filter(s => s.trim()).length} Institutions Selected (Tap to edit)`
+                                : `Select ${driverCity} Universities / Colleges / Schools...`}
+                            </Text>
+                          </View>
+                          <Ionicons name="chevron-forward" size={18} color="#16a34a" />
                         </View>
-                      )}
 
-                      <Text style={styles.inputFieldLabel}>Passport Size Photo *</Text>
-                      <View style={styles.docUploadCard}>
-                        {passportPhoto ? (
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                            <Image source={{ uri: passportPhoto }} style={styles.docPreviewThumb} />
-                            <View style={{ flex: 1 }}>
-                              <Text style={styles.docUploadedTitle}>✅ Passport Photo Uploaded</Text>
-                              <TouchableOpacity onPress={() => handlePickDocument('passport')}>
-                                <Text style={styles.docChangeText}>Change Photo</Text>
-                              </TouchableOpacity>
-                            </View>
-                          </View>
-                        ) : (
-                          <View>
-                            <TouchableOpacity
-                              style={styles.docUploadBtn}
-                              onPress={() => handlePickDocument('passport')}
-                              activeOpacity={0.8}
-                            >
-                              <Ionicons name="camera-outline" size={22} color="#2563EB" />
-                              <Text style={styles.docUploadBtnText}>Upload Passport Photo (Selfie / Formal)</Text>
-                            </TouchableOpacity>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                          {servedUniversities
+                            .split(',')
+                            .map((u) => u.trim())
+                            .filter(Boolean)
+                            .map((uName, uIdx) => (
+                              <View
+                                key={uIdx}
+                                style={{
+                                  backgroundColor: '#dcfce7',
+                                  borderWidth: 1,
+                                  borderColor: '#86efac',
+                                  borderRadius: 16,
+                                  paddingHorizontal: 8,
+                                  paddingVertical: 3,
+                                  flexDirection: 'row',
+                                  alignItems: 'center',
+                                }}
+                              >
+                                <Ionicons name="checkmark-circle" size={12} color="#16a34a" style={{ marginRight: 4 }} />
+                                <Text style={{ fontSize: 11, fontWeight: '600', color: '#166534', maxWidth: 220 }} numberOfLines={1}>
+                                  {uName}
+                                </Text>
+                              </View>
+                            ))}
+                        </View>
+                      </TouchableOpacity>
+                      <Text style={{ fontSize: 11, color: '#15803d', marginTop: 8 }}>
+                        💡 Select multiple institutions or use &quot;Other&quot; inside the picker to add any school/college.
+                      </Text>
+                    </View>
+                  ) : null}
 
-                            <TouchableOpacity
-                              style={{
-                                marginTop: 6,
-                                alignSelf: 'center',
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                gap: 4,
-                                paddingVertical: 4,
-                                paddingHorizontal: 8,
-                                backgroundColor: '#f0fdf4',
-                                borderRadius: 6,
-                                borderWidth: 1,
-                                borderColor: '#bbf7d0',
-                              }}
-                              onPress={() =>
-                                setPassportPhoto('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300')
-                              }
-                            >
-                              <Ionicons name="sparkles" size={12} color="#16a34a" />
-                              <Text style={{ fontSize: 11, fontWeight: '700', color: '#16a34a' }}>
-                                Use Sample Passport Photo
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
-                        )}
+                  {/* 4. DRIVER PHOTO (JPEG ONLY) */}
+                  <Text style={styles.inputFieldLabel}>4. DRIVER PROFILE PHOTO (JPEG ONLY) *</Text>
+                  <View style={styles.docUploadCard}>
+                    {driverPhoto || passportPhoto ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        <Image source={{ uri: driverPhoto || passportPhoto }} style={styles.docPreviewThumb} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.docUploadedTitle}>✅ Driver Photo Uploaded (JPEG)</Text>
+                          <TouchableOpacity onPress={() => handlePickDocument('driver_photo')}>
+                            <Text style={styles.docChangeText}>Change Photo</Text>
+                          </TouchableOpacity>
+                        </View>
                       </View>
+                    ) : (
+                      <View>
+                        <TouchableOpacity
+                          style={styles.docUploadBtn}
+                          onPress={() => handlePickDocument('driver_photo')}
+                          activeOpacity={0.8}
+                        >
+                          <Ionicons name="camera-outline" size={22} color="#2563EB" />
+                          <Text style={styles.docUploadBtnText}>Upload Driver Photo (.jpg / .jpeg)</Text>
+                        </TouchableOpacity>
 
-                      <Text style={styles.inputFieldLabel}>Driving License Document Photo *</Text>
-                      <View style={styles.docUploadCard}>
-                        {licensePhoto ? (
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                            <Image source={{ uri: licensePhoto }} style={styles.licensePreviewThumb} />
-                            <View style={{ flex: 1 }}>
-                              <Text style={styles.docUploadedTitle}>✅ Driving License Uploaded</Text>
-                              <TouchableOpacity onPress={() => handlePickDocument('license')}>
-                                <Text style={styles.docChangeText}>Change Document</Text>
-                              </TouchableOpacity>
-                            </View>
-                          </View>
-                        ) : (
-                          <View>
-                            <TouchableOpacity
-                              style={styles.docUploadBtn}
-                              onPress={() => handlePickDocument('license')}
-                              activeOpacity={0.8}
-                            >
-                              <Ionicons name="card-outline" size={22} color="#2563EB" />
-                              <Text style={styles.docUploadBtnText}>Upload Driving License (Front View)</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                              style={{
-                                marginTop: 6,
-                                alignSelf: 'center',
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                gap: 4,
-                                paddingVertical: 4,
-                                paddingHorizontal: 8,
-                                backgroundColor: '#f0fdf4',
-                                borderRadius: 6,
-                                borderWidth: 1,
-                                borderColor: '#bbf7d0',
-                              }}
-                              onPress={() =>
-                                setLicensePhoto('https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300')
-                              }
-                            >
-                              <Ionicons name="sparkles" size={12} color="#16a34a" />
-                              <Text style={{ fontSize: 11, fontWeight: '700', color: '#16a34a' }}>
-                                Use Sample License Document
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
-                        )}
+                        <TouchableOpacity
+                          style={{
+                            marginTop: 6,
+                            alignSelf: 'center',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 4,
+                            paddingVertical: 4,
+                            paddingHorizontal: 8,
+                            backgroundColor: '#f0fdf4',
+                            borderRadius: 6,
+                            borderWidth: 1,
+                            borderColor: '#bbf7d0',
+                          }}
+                          onPress={() => {
+                            const p = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300';
+                            setDriverPhoto(p);
+                            setPassportPhoto(p);
+                          }}
+                        >
+                          <Ionicons name="sparkles" size={12} color="#16a34a" />
+                          <Text style={{ fontSize: 11, fontWeight: '700', color: '#16a34a' }}>
+                            Use Sample Driver Photo
+                          </Text>
+                        </TouchableOpacity>
                       </View>
+                    )}
+                  </View>
 
-                      <Text style={styles.inputFieldLabel}>Upload Aadhaar Card (Front / Document Photo) *</Text>
-                      <View style={styles.docUploadCard}>
-                        {aadhaarPhoto ? (
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                            <Image source={{ uri: aadhaarPhoto }} style={styles.licensePreviewThumb} />
-                            <View style={{ flex: 1 }}>
-                              <Text style={styles.docUploadedTitle}>✅ Aadhaar Card Document Uploaded</Text>
-                              <TouchableOpacity onPress={() => handlePickDocument('aadhaar')}>
-                                <Text style={styles.docChangeText}>Change Document</Text>
-                              </TouchableOpacity>
-                            </View>
-                          </View>
-                        ) : (
-                          <View>
-                            <TouchableOpacity
-                              style={styles.docUploadBtn}
-                              onPress={() => handlePickDocument('aadhaar')}
-                              activeOpacity={0.8}
-                            >
-                              <Ionicons name="finger-print-outline" size={22} color="#0284c7" />
-                              <Text style={styles.docUploadBtnText}>Upload Aadhaar Card Document</Text>
-                            </TouchableOpacity>
+                  {/* 5. DRIVING LICENSE */}
+                  <Text style={styles.inputFieldLabel}>5. DRIVING LICENSE NUMBER *</Text>
+                  <View style={styles.textInputBox}>
+                    <Ionicons name="card-outline" size={16} color="#64748b" style={{ marginRight: 8 }} />
+                    <TextInput
+                      style={styles.textInputInside}
+                      placeholder="e.g. GJ-06-2023-0012345"
+                      placeholderTextColor="#94a3b8"
+                      autoCapitalize="characters"
+                      value={licenseNumber}
+                      onChangeText={setLicenseNumber}
+                    />
+                  </View>
 
-                            <TouchableOpacity
-                              style={{
-                                marginTop: 6,
-                                alignSelf: 'center',
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                gap: 4,
-                                paddingVertical: 4,
-                                paddingHorizontal: 8,
-                                backgroundColor: '#f0fdf4',
-                                borderRadius: 6,
-                                borderWidth: 1,
-                                borderColor: '#bbf7d0',
-                              }}
-                              onPress={() =>
-                                setAadhaarPhoto('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300')
-                              }
-                            >
-                              <Ionicons name="sparkles" size={12} color="#16a34a" />
-                              <Text style={{ fontSize: 11, fontWeight: '700', color: '#16a34a' }}>
-                                Use Sample Aadhaar Document
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
-                        )}
+                  <Text style={styles.inputFieldLabel}>DRIVING LICENSE DOCUMENT PHOTO *</Text>
+                  <View style={styles.docUploadCard}>
+                    {licensePhoto ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        <Image source={{ uri: licensePhoto }} style={styles.licensePreviewThumb} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.docUploadedTitle}>✅ Driving License Document Uploaded</Text>
+                          <TouchableOpacity onPress={() => handlePickDocument('license')}>
+                            <Text style={styles.docChangeText}>Change Document</Text>
+                          </TouchableOpacity>
+                        </View>
                       </View>
+                    ) : (
+                      <View>
+                        <TouchableOpacity
+                          style={styles.docUploadBtn}
+                          onPress={() => handlePickDocument('license')}
+                          activeOpacity={0.8}
+                        >
+                          <Ionicons name="card-outline" size={22} color="#2563EB" />
+                          <Text style={styles.docUploadBtnText}>Upload Driving License (Front View)</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={{
+                            marginTop: 6,
+                            alignSelf: 'center',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 4,
+                            paddingVertical: 4,
+                            paddingHorizontal: 8,
+                            backgroundColor: '#f0fdf4',
+                            borderRadius: 6,
+                            borderWidth: 1,
+                            borderColor: '#bbf7d0',
+                          }}
+                          onPress={() =>
+                            setLicensePhoto('https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300')
+                          }
+                        >
+                          <Ionicons name="sparkles" size={12} color="#16a34a" />
+                          <Text style={{ fontSize: 11, fontWeight: '700', color: '#16a34a' }}>
+                            Use Sample License Document
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* 6. PAN CARD */}
+                  <Text style={styles.inputFieldLabel}>6. PAN CARD NUMBER *</Text>
+                  <View style={styles.textInputBox}>
+                    <Ionicons name="document-text-outline" size={16} color="#64748b" style={{ marginRight: 8 }} />
+                    <TextInput
+                      style={styles.textInputInside}
+                      placeholder="e.g. ABCDE1234F"
+                      placeholderTextColor="#94a3b8"
+                      autoCapitalize="characters"
+                      maxLength={10}
+                      value={panNumber}
+                      onChangeText={(t) => setPanNumber(t.toUpperCase())}
+                    />
+                  </View>
+
+                  <Text style={styles.inputFieldLabel}>PAN CARD DOCUMENT PHOTO *</Text>
+                  <View style={styles.docUploadCard}>
+                    {panPhoto ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        <Image source={{ uri: panPhoto }} style={styles.licensePreviewThumb} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.docUploadedTitle}>✅ PAN Card Document Uploaded</Text>
+                          <TouchableOpacity onPress={() => handlePickDocument('pan')}>
+                            <Text style={styles.docChangeText}>Change Document</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ) : (
+                      <View>
+                        <TouchableOpacity
+                          style={styles.docUploadBtn}
+                          onPress={() => handlePickDocument('pan')}
+                          activeOpacity={0.8}
+                        >
+                          <Ionicons name="document-text-outline" size={22} color="#2563EB" />
+                          <Text style={styles.docUploadBtnText}>Upload PAN Card Photo</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={{
+                            marginTop: 6,
+                            alignSelf: 'center',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 4,
+                            paddingVertical: 4,
+                            paddingHorizontal: 8,
+                            backgroundColor: '#f0fdf4',
+                            borderRadius: 6,
+                            borderWidth: 1,
+                            borderColor: '#bbf7d0',
+                          }}
+                          onPress={() =>
+                            setPanPhoto('https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=300')
+                          }
+                        >
+                          <Ionicons name="sparkles" size={12} color="#16a34a" />
+                          <Text style={{ fontSize: 11, fontWeight: '700', color: '#16a34a' }}>
+                            Use Sample PAN Document
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* 7. AADHAAR CARD */}
+                  <Text style={styles.inputFieldLabel}>7. AADHAAR CARD NUMBER (12 DIGITS) *</Text>
+                  <View style={styles.textInputBox}>
+                    <Ionicons name="finger-print-outline" size={16} color="#0284c7" style={{ marginRight: 8 }} />
+                    <TextInput
+                      style={styles.textInputInside}
+                      placeholder="e.g. 5432 8901 2345"
+                      placeholderTextColor="#94a3b8"
+                      keyboardType="number-pad"
+                      maxLength={14}
+                      value={aadhaarNumber}
+                      onChangeText={(t) => {
+                        const clean = t.replace(/\D/g, '').slice(0, 12);
+                        const formatted = clean.replace(/(\d{4})(?=\d)/g, '$1 ');
+                        setAadhaarNumber(formatted);
+                      }}
+                    />
+                  </View>
+
+                  <Text style={styles.inputFieldLabel}>AADHAAR CARD DOCUMENT PHOTO *</Text>
+                  <View style={styles.docUploadCard}>
+                    {aadhaarPhoto ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        <Image source={{ uri: aadhaarPhoto }} style={styles.licensePreviewThumb} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.docUploadedTitle}>✅ Aadhaar Card Document Uploaded</Text>
+                          <TouchableOpacity onPress={() => handlePickDocument('aadhaar')}>
+                            <Text style={styles.docChangeText}>Change Document</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ) : (
+                      <View>
+                        <TouchableOpacity
+                          style={styles.docUploadBtn}
+                          onPress={() => handlePickDocument('aadhaar')}
+                          activeOpacity={0.8}
+                        >
+                          <Ionicons name="finger-print-outline" size={22} color="#0284c7" />
+                          <Text style={styles.docUploadBtnText}>Upload Aadhaar Card Document</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={{
+                            marginTop: 6,
+                            alignSelf: 'center',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 4,
+                            paddingVertical: 4,
+                            paddingHorizontal: 8,
+                            backgroundColor: '#f0fdf4',
+                            borderRadius: 6,
+                            borderWidth: 1,
+                            borderColor: '#bbf7d0',
+                          }}
+                          onPress={() =>
+                            setAadhaarPhoto('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300')
+                          }
+                        >
+                          <Ionicons name="sparkles" size={12} color="#16a34a" />
+                          <Text style={{ fontSize: 11, fontWeight: '700', color: '#16a34a' }}>
+                            Use Sample Aadhaar Document
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* 8. VEHICLE DETAILS */}
+                  <Text style={styles.inputFieldLabel}>8. VEHICLE TYPE / TIER *</Text>
+                  <View style={styles.vehicleCategorySelector}>
+                    {[
+                      { id: 'bike', label: 'General Bike', desc: 'Splendor, Activa, Platina (₹7/km)', defaultModel: 'Hero Splendor Plus' },
+                      { id: 'bullet', label: 'Pro Bike', desc: 'Bullet, KTM Duke, Hunter (₹13/km)', defaultModel: 'Royal Enfield Bullet 350' },
+                      { id: 'auto', label: 'Auto Rickshaw', desc: 'Bajaj 3-Wheeler (₹10/km)', defaultModel: 'Bajaj RE Auto' },
+                      { id: 'car', label: 'Car / Cab', desc: 'Swift Dzire, Sedan (₹15/km)', defaultModel: 'Maruti Dzire' },
+                    ].map((item) => (
+                      <TouchableOpacity
+                        key={item.id}
+                        style={[
+                          styles.vehCategoryOption,
+                          vehicleCategory === item.id && styles.vehCategoryOptionActive,
+                        ]}
+                        onPress={() => {
+                          setVehicleCategory(item.id as any);
+                          setVehicleModel(item.defaultModel);
+                        }}
+                      >
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={[
+                              styles.vehCategoryTitle,
+                              vehicleCategory === item.id && styles.vehCategoryTitleActive,
+                            ]}
+                          >
+                            {item.label}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.vehCategoryDesc,
+                              vehicleCategory === item.id && styles.vehCategoryDescActive,
+                            ]}
+                          >
+                            {item.desc}
+                          </Text>
+                        </View>
+                        {vehicleCategory === item.id && (
+                          <Ionicons name="checkmark-circle" size={18} color="#2563EB" />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  <Text style={styles.inputFieldLabel}>VEHICLE PLATE NUMBER (GADI NUMBER) *</Text>
+                  <View style={styles.textInputBox}>
+                    <TextInput
+                      style={styles.textInputInside}
+                      placeholder="e.g. GJ-06-EK-8892"
+                      placeholderTextColor="#94a3b8"
+                      autoCapitalize="characters"
+                      value={vehiclePlate}
+                      onChangeText={setVehiclePlate}
+                    />
+                  </View>
+
+                  <Text style={styles.inputFieldLabel}>VEHICLE MODEL / MAKE</Text>
+                  <View style={styles.textInputBox}>
+                    <TextInput
+                      style={styles.textInputInside}
+                      placeholder="e.g. Hero Splendor Plus, Bajaj Pulsar"
+                      placeholderTextColor="#94a3b8"
+                      value={vehicleModel}
+                      onChangeText={setVehicleModel}
+                    />
+                  </View>
+
+                  {/* 9. ADDRESS DETAILS */}
+                  <Text style={styles.inputFieldLabel}>9. PERMANENT ADDRESS *</Text>
+                  <View style={[styles.textInputBox, { height: 64, alignItems: 'flex-start', paddingTop: 8 }]}>
+                    <TextInput
+                      style={[styles.textInputInside, { height: 48 }]}
+                      placeholder="Village/Town, Tehsil, District, State, PIN Code"
+                      placeholderTextColor="#94a3b8"
+                      multiline
+                      value={permanentAddress}
+                      onChangeText={setPermanentAddress}
+                    />
+                  </View>
+
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, marginBottom: 4 }}>
+                    <Text style={styles.inputFieldLabel}>CURRENT / OPERATING ADDRESS *</Text>
+                    <TouchableOpacity
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                      onPress={() => {
+                        const next = !sameAddress;
+                        setSameAddress(next);
+                        if (next) setCurrentAddress(permanentAddress);
+                      }}
+                    >
+                      <Ionicons
+                        name={sameAddress ? 'checkbox' : 'square-outline'}
+                        size={16}
+                        color={sameAddress ? '#2563EB' : '#94a3b8'}
+                      />
+                      <Text style={{ fontSize: 12, color: '#2563EB', fontWeight: '700' }}>Same as Permanent</Text>
+                    </TouchableOpacity>
+                  </View>
+                  {!sameAddress && (
+                    <View style={[styles.textInputBox, { height: 64, alignItems: 'flex-start', paddingTop: 8 }]}>
+                      <TextInput
+                        style={[styles.textInputInside, { height: 48 }]}
+                        placeholder="Current Room / Hostel / City Operating Address"
+                        placeholderTextColor="#94a3b8"
+                        multiline
+                        value={currentAddress}
+                        onChangeText={setCurrentAddress}
+                      />
                     </View>
                   )}
+
+                  {/* 7-DAY WAIT NOTICE BOX */}
+                  <View style={{
+                    backgroundColor: '#fffbeb',
+                    borderColor: '#f59e0b',
+                    borderWidth: 1.5,
+                    borderRadius: 12,
+                    padding: 12,
+                    marginTop: 14,
+                  }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      <Ionicons name="time" size={18} color="#d97706" />
+                      <Text style={{ fontSize: 12, fontWeight: '800', color: '#92400e' }}>
+                        ⏳ Notice: 7 Days Admin Verification Timeline
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: 11, color: '#78350f', lineHeight: 16 }}>
+                      Upon submission, your application will be reviewed by IndiRide Compliance within 7 days. You will be able to log in to the driver dashboard after official approval.
+                    </Text>
+                  </View>
                 </View>
               )}
 
@@ -2141,7 +1919,7 @@ export default function LoginScreen() {
               <TouchableOpacity
                 style={[
                   styles.authSubmitBtn,
-                  role === 'rider' && riderServiceType === 'CAMPUS' && { backgroundColor: '#059669' }
+                  role === 'rider' && { backgroundColor: '#2563eb' }
                 ]}
                 onPress={handleCompleteNameEntry}
                 disabled={loading}
@@ -2152,9 +1930,7 @@ export default function LoginScreen() {
                 ) : (
                   <Text style={styles.authSubmitBtnText}>
                     {role === 'rider'
-                      ? (riderServiceType === 'CAMPUS'
-                          ? '⚡ Complete Campus Registration & Start Immediately'
-                          : 'Submit Driver Application for Approval 📋')
+                      ? 'Submit Application (Wait for 7 Days) 📋'
                       : 'Save Name & Start Riding 🚀'}
                   </Text>
                 )}
@@ -2451,11 +2227,13 @@ export default function LoginScreen() {
         onClose={() => setPlayStoreModalVisible(false)}
       />
 
-      {/* Gujarat Institutions Multi-Select Modal */}
+      {/* Universities & Colleges Multi-Select Modal */}
       <InstitutionMultiSelectModal
         visible={showUniPickerModal}
         onClose={() => setShowUniPickerModal(false)}
         selectedInstitutions={servedUniversities}
+        selectedState={driverState}
+        selectedCity={driverCity}
         onConfirm={(updated) => {
           setServedUniversities(updated);
           if (updated) {
@@ -2463,8 +2241,18 @@ export default function LoginScreen() {
             if (first) setCollegeName(first);
           }
         }}
-        title="Gujarat Universities, Colleges & Schools"
+        title={`${driverCity || driverState || 'Campus'} Universities & Colleges`}
         subtitle="Select all institutions you want to serve as an IndiRide driver partner"
+      />
+
+      {/* 7-Day Wait Pending Driver Approval Modal */}
+      <PendingDriverApprovalModal
+        visible={showPendingModal}
+        onClose={() => {
+          setShowPendingModal(false);
+          setViewMode('login');
+        }}
+        driverData={pendingNoticeData}
       />
     </View>
   );

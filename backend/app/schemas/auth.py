@@ -26,6 +26,8 @@ class UserRegisterRequest(BaseModel):
     vehicle_plate: Optional[str] = None
     vehicle_model: Optional[str] = None
     rider_service_type: Optional[str] = Field(default="REGULAR", description="REGULAR or CAMPUS")
+    driver_state: Optional[str] = Field(default=None, description="Driver operating state")
+    driver_city: Optional[str] = Field(default=None, description="Driver operating city")
     served_universities: Optional[str] = Field(default=None, description="Comma-separated universities driver serves")
     college_name: Optional[str] = None
     academic_year: Optional[str] = None
@@ -33,8 +35,11 @@ class UserRegisterRequest(BaseModel):
     student_id_photo: Optional[str] = None
     permanent_address: Optional[str] = None
     current_address: Optional[str] = None
+    driver_photo: Optional[str] = None
     passport_photo: Optional[str] = None
     license_photo: Optional[str] = None
+    pan_number: Optional[str] = None
+    pan_photo: Optional[str] = None
     aadhaar_number: Optional[str] = None
     aadhaar_photo: Optional[str] = None
 

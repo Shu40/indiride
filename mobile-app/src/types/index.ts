@@ -47,10 +47,15 @@ export interface User {
     student_id_photo?: string;
     permanent_address?: string;
     current_address?: string;
+    driver_photo?: string;
     passport_photo?: string;
     license_photo?: string;
+    pan_number?: string;
+    pan_photo?: string;
     aadhaar_number?: string;
     aadhaar_photo?: string;
+    driver_state?: string;
+    driver_city?: string;
     rejection_reason?: string;
     submitted_at?: string;
     verified_at?: string;

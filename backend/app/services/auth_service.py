@@ -137,28 +137,32 @@ class AuthService:
             db.add(passenger_prof)
 
         if request.role == UserRole.RIDER:
-            is_campus = (request.rider_service_type or "").upper() == "CAMPUS"
             license_num = request.license_number or f"DL-{user.id[:8].upper()}"
             rider_prof = RiderProfile(
                 user_id=user.id,
                 license_number=license_num,
-                # Campus driver is auto-approved without admin bottleneck
-                status=RiderApprovalStatus.APPROVED if is_campus else RiderApprovalStatus.PENDING,
-                is_online=True if is_campus else False,
-                rider_service_type="CAMPUS" if is_campus else (request.rider_service_type or "REGULAR"),
+                # All new driver applications start as PENDING for admin document verification (7-day review period)
+                status=RiderApprovalStatus.PENDING,
+                is_online=False,
+                rider_service_type=request.rider_service_type or "REGULAR",
+                driver_state=request.driver_state,
+                driver_city=request.driver_city,
                 served_universities=request.served_universities or request.college_name,
                 college_name=request.college_name or request.served_universities,
                 academic_year=request.academic_year,
                 student_id_number=request.student_id_number,
                 student_id_photo=request.student_id_photo,
-                permanent_address=request.permanent_address,
-                current_address=request.current_address,
-                passport_photo=request.passport_photo,
+                driver_photo=request.driver_photo or request.passport_photo,
+                passport_photo=request.passport_photo or request.driver_photo,
                 license_photo=request.license_photo,
+                pan_number=request.pan_number,
+                pan_photo=request.pan_photo,
                 aadhaar_number=request.aadhaar_number,
                 aadhaar_photo=request.aadhaar_photo,
+                permanent_address=request.permanent_address,
+                current_address=request.current_address,
                 submitted_at=datetime.utcnow(),
-                verified_at=datetime.utcnow() if is_campus else None
+                verified_at=None
             )
             db.add(rider_prof)
             db.flush()

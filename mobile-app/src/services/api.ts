@@ -156,9 +156,14 @@ export const api = {
       permanent_address?: string;
       current_address?: string;
       passport_photo?: string;
+      driver_photo?: string;
       license_photo?: string;
+      pan_number?: string;
+      pan_photo?: string;
       aadhaar_number?: string;
       aadhaar_photo?: string;
+      driver_state?: string;
+      driver_city?: string;
     }) =>
       apiRequest<{ access_token: string; refresh_token: string; user: User }>('/auth/register', {
         method: 'POST',

@@ -97,12 +97,17 @@ class RiderProfile(Base):
     student_id_photo = Column(String(500), nullable=True)  # Student ID Card document image
 
     # Rider KYC & Verification Data
-    permanent_address = Column(String(300), nullable=True)
-    current_address = Column(String(300), nullable=True)
+    driver_photo = Column(String(500), nullable=True) # JPEG driver selfie / photo
     passport_photo = Column(String(500), nullable=True)
     license_photo = Column(String(500), nullable=True)
+    pan_number = Column(String(20), nullable=True)
+    pan_photo = Column(String(500), nullable=True)
     aadhaar_number = Column(String(20), nullable=True)
     aadhaar_photo = Column(String(500), nullable=True)
+    driver_state = Column(String(100), nullable=True)
+    driver_city = Column(String(100), nullable=True)
+    permanent_address = Column(String(300), nullable=True)
+    current_address = Column(String(300), nullable=True)
     rejection_reason = Column(String(300), nullable=True)
     submitted_at = Column(DateTime, default=datetime.utcnow)
     verified_at = Column(DateTime, nullable=True)

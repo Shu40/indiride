@@ -109,27 +109,32 @@ def register(request: UserRegisterRequest, db: Session = Depends(get_db)):
 
         if request.role == UserRole.RIDER:
             existing_user.role = UserRole.RIDER
-            is_campus = (request.rider_service_type or "").upper() == "CAMPUS"
             if not existing_user.rider_profile:
                 prof = RiderProfile(
                     user_id=existing_user.id,
                     license_number=request.license_number or f"DL-{existing_user.id[:8].upper()}",
-                    status=RiderApprovalStatus.APPROVED if is_campus else RiderApprovalStatus.PENDING,
-                    is_online=True if is_campus else False,
-                    rider_service_type="CAMPUS" if is_campus else (request.rider_service_type or "REGULAR"),
+                    # All driver applications start as PENDING for admin document verification (7-day review period)
+                    status=RiderApprovalStatus.PENDING,
+                    is_online=False,
+                    rider_service_type=request.rider_service_type or "REGULAR",
+                    driver_state=request.driver_state,
+                    driver_city=request.driver_city,
                     served_universities=request.served_universities or request.college_name,
                     college_name=request.college_name or request.served_universities,
                     academic_year=request.academic_year,
                     student_id_number=request.student_id_number,
                     student_id_photo=request.student_id_photo,
-                    permanent_address=request.permanent_address,
-                    current_address=request.current_address,
-                    passport_photo=request.passport_photo,
+                    driver_photo=request.driver_photo or request.passport_photo,
+                    passport_photo=request.passport_photo or request.driver_photo,
                     license_photo=request.license_photo,
+                    pan_number=request.pan_number,
+                    pan_photo=request.pan_photo,
                     aadhaar_number=request.aadhaar_number,
                     aadhaar_photo=request.aadhaar_photo,
+                    permanent_address=request.permanent_address,
+                    current_address=request.current_address,
                     submitted_at=datetime.utcnow(),
-                    verified_at=datetime.utcnow() if is_campus else None
+                    verified_at=None
                 )
                 db.add(prof)
                 db.flush()
@@ -171,10 +176,22 @@ def register(request: UserRegisterRequest, db: Session = Depends(get_db)):
                     prof.permanent_address = request.permanent_address
                 if request.current_address:
                     prof.current_address = request.current_address
-                if request.passport_photo:
+                if request.driver_state:
+                    prof.driver_state = request.driver_state
+                if request.driver_city:
+                    prof.driver_city = request.driver_city
+                if request.driver_photo:
+                    prof.driver_photo = request.driver_photo
+                    prof.passport_photo = request.driver_photo
+                elif request.passport_photo:
                     prof.passport_photo = request.passport_photo
+                    prof.driver_photo = request.passport_photo
                 if request.license_photo:
                     prof.license_photo = request.license_photo
+                if request.pan_number:
+                    prof.pan_number = request.pan_number
+                if request.pan_photo:
+                    prof.pan_photo = request.pan_photo
                 if request.aadhaar_number:
                     prof.aadhaar_number = request.aadhaar_number
                 if request.aadhaar_photo:
@@ -186,13 +203,11 @@ def register(request: UserRegisterRequest, db: Session = Depends(get_db)):
                 if request.vehicle_category and prof.vehicles and request.vehicle_category.lower() in ["car", "auto", "bike"]:
                     prof.vehicles[0].category = VehicleCategory(request.vehicle_category.lower())
 
-                if is_campus:
-                    prof.status = RiderApprovalStatus.APPROVED
-                    prof.is_online = True
-                    prof.verified_at = datetime.utcnow()
-                else:
-                    prof.status = RiderApprovalStatus.PENDING
+                # Set pending status for admin document review (7-day wait)
+                prof.status = RiderApprovalStatus.PENDING
+                prof.is_online = False
                 prof.submitted_at = datetime.utcnow()
+                prof.verified_at = None
 
         try:
             db.commit()

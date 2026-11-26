@@ -20,6 +20,8 @@ interface InstitutionMultiSelectModalProps {
   onClose: () => void;
   selectedInstitutions: string; // Comma separated string e.g. "Parul University, MSU"
   onConfirm: (selectedInstitutionsString: string) => void;
+  selectedState?: string;
+  selectedCity?: string;
   title?: string;
   subtitle?: string;
 }
@@ -29,7 +31,9 @@ export const InstitutionMultiSelectModal: React.FC<InstitutionMultiSelectModalPr
   onClose,
   selectedInstitutions,
   onConfirm,
-  title = 'Gujarat Universities, Colleges & Schools',
+  selectedState,
+  selectedCity,
+  title = 'Universities, Colleges & Schools',
   subtitle = 'Select all institutions you want to serve as a driver partner',
 }) => {
   // Local selection state
@@ -42,7 +46,7 @@ export const InstitutionMultiSelectModal: React.FC<InstitutionMultiSelectModalPr
   // "Other" institution form state
   const [showOtherForm, setShowOtherForm] = useState<boolean>(false);
   const [otherName, setOtherName] = useState<string>('');
-  const [otherCity, setOtherCity] = useState<string>('');
+  const [otherCity, setOtherCity] = useState<string>(selectedCity || '');
   const [otherCategory, setOtherCategory] = useState<'University' | 'College' | 'School'>('College');
   const [savingOther, setSavingOther] = useState<boolean>(false);
   const [otherSuccessMsg, setOtherSuccessMsg] = useState<string>('');
@@ -58,16 +62,17 @@ export const InstitutionMultiSelectModal: React.FC<InstitutionMultiSelectModalPr
       setSearchQuery('');
       setShowOtherForm(false);
       setOtherSuccessMsg('');
+      setOtherCity(selectedCity || '');
 
       // Fetch latest list from backend DB to merge any custom added universities
       fetchBackendInstitutions();
     }
-  }, [visible, selectedInstitutions]);
+  }, [visible, selectedInstitutions, selectedCity, selectedState]);
 
   const fetchBackendInstitutions = async () => {
     try {
       setLoadingBackend(true);
-      const res = await api.campusRides.getUniversities({ state: 'Gujarat' });
+      const res = await api.campusRides.getUniversities({ state: selectedState || undefined });
       if (Array.isArray(res) && res.length > 0) {
         setAllInstitutions((prev) => {
           const map = new Map<string, GujaratInstitution>();
@@ -130,6 +135,20 @@ export const InstitutionMultiSelectModal: React.FC<InstitutionMultiSelectModalPr
   const filteredList = useMemo(() => {
     let list = allInstitutions;
 
+    // Filter by State if selected
+    if (selectedState) {
+      const stateMatches = list.filter((i) => i.state && i.state.toLowerCase() === selectedState.toLowerCase());
+      if (stateMatches.length > 0) {
+        if (selectedCity) {
+          const cityMatches = stateMatches.filter((i) => i.city && i.city.toLowerCase().includes(selectedCity.toLowerCase()));
+          const otherInState = stateMatches.filter((i) => !i.city || !i.city.toLowerCase().includes(selectedCity.toLowerCase()));
+          list = [...cityMatches, ...otherInState];
+        } else {
+          list = stateMatches;
+        }
+      }
+    }
+
     // Filter by Category
     if (activeCategory !== 'ALL') {
       list = list.filter((i) => i.category === activeCategory);
@@ -138,16 +157,20 @@ export const InstitutionMultiSelectModal: React.FC<InstitutionMultiSelectModalPr
     // Filter by Search Query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      list = list.filter(
+      list = allInstitutions.filter(
         (i) =>
           i.name.toLowerCase().includes(q) ||
           (i.shortName && i.shortName.toLowerCase().includes(q)) ||
-          i.city.toLowerCase().includes(q)
+          i.city.toLowerCase().includes(q) ||
+          (i.state && i.state.toLowerCase().includes(q))
       );
+      if (activeCategory !== 'ALL') {
+        list = list.filter((i) => i.category === activeCategory);
+      }
     }
 
     return list;
-  }, [allInstitutions, activeCategory, searchQuery]);
+  }, [allInstitutions, activeCategory, searchQuery, selectedState, selectedCity]);
 
   // Handle saving new institution ("Other") to DB
   const handleSaveOtherInstitution = async () => {
@@ -157,7 +180,8 @@ export const InstitutionMultiSelectModal: React.FC<InstitutionMultiSelectModalPr
       return;
     }
 
-    const city = otherCity.trim() || 'Gujarat';
+    const city = otherCity.trim() || selectedCity || 'Gujarat';
+    const state = selectedState || 'Gujarat';
 
     try {
       setSavingOther(true);
@@ -167,7 +191,7 @@ export const InstitutionMultiSelectModal: React.FC<InstitutionMultiSelectModalPr
       const created = await api.campusRides.createUniversity({
         name: trimmedName,
         city: city,
-        state: 'Gujarat',
+        state: state,
       });
 
       const newItem: GujaratInstitution = {
@@ -228,7 +252,9 @@ export const InstitutionMultiSelectModal: React.FC<InstitutionMultiSelectModalPr
           <View style={styles.header}>
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={styles.headerBadge}>GUJARAT INSTITUTIONS</Text>
+                <Text style={styles.headerBadge}>
+                  {selectedState ? `${selectedState.toUpperCase()} INSTITUTIONS` : 'INSTITUTIONS DIRECTORY'}
+                </Text>
                 {loadingBackend && <ActivityIndicator size="small" color="#16a34a" style={{ marginLeft: 8 }} />}
               </View>
               <Text style={styles.headerTitle}>{title}</Text>
