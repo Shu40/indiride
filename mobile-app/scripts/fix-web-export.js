@@ -104,8 +104,8 @@ const masterSeoSchema = {
       "name": "IndiRide",
       "alternateName": ["Indi Ride", "indiride", "indi ride", "IndiRide Bihar"],
       "url": "https://indiride-web.vercel.app",
-      "logo": "https://indiride-web.vercel.app/photo.jpeg",
-      "image": "https://indiride-web.vercel.app/photo.jpeg",
+      "logo": "https://indiride-web.vercel.app/logo.png",
+      "image": "https://indiride-web.vercel.app/og-image.png",
       "foundingDate": "2024",
       "foundingLocation": {
         "@type": "Place",
@@ -211,8 +211,8 @@ const masterSeoSchema = {
       "name": "IndiRide - India's Smart Ride-Hailing Network (Official Promo Video)",
       "description": "Official launch and overview video of IndiRide (Indi Ride) founded by Shubham Kumar. Demonstrates ₹7/km bike taxi, ₹10/km auto, ₹15/km cab, 15% student discount, zero surge pricing, and automated AI driver voice verification.",
       "thumbnailUrl": [
-        "https://indiride-web.vercel.app/photo.jpeg",
-        "https://indiride-web.vercel.app/assets/goride_hero.jpg"
+        "https://indiride-web.vercel.app/og-image.png",
+        "https://indiride-web.vercel.app/logo.png"
       ],
       "uploadDate": "2026-11-26T10:00:00+05:30",
       "duration": "PT42S",
@@ -266,12 +266,12 @@ if (fs.existsSync(indexHtmlPath)) {
     <meta property="og:site_name" content="IndiRide" />
     <meta property="og:title" content="IndiRide (Indi Ride) - Bihar's Smart Ride-Hailing Platform | Founder: Shubham Kumar" />
     <meta property="og:description" content="Book transparent bike taxi (₹7/km), auto (₹10/km) & cab (₹15/km) rides in Bihar & India. Founded by Shubham Kumar (22, Cloud & DevOps Engineer from Bihar, company founded in Gujarat)." />
-    <meta property="og:image" content="https://indiride-web.vercel.app/photo.jpeg" />
-    <meta property="og:image:secure_url" content="https://indiride-web.vercel.app/photo.jpeg" />
-    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image" content="https://indiride-web.vercel.app/og-image.png" />
+    <meta property="og:image:secure_url" content="https://indiride-web.vercel.app/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="1200" />
-    <meta property="og:image:alt" content="Shubham Kumar - Founder & CEO of IndiRide, 22-year-old Cloud and DevOps Engineer from Bihar, India" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="IndiRide - India's Smart Ride-Hailing Platform" />
 
     <!-- Open Graph Video / Social Media Video Preview -->
     <meta property="og:video" content="https://indiride-web.vercel.app/indiride_promo_video.mp4" />
@@ -288,8 +288,8 @@ if (fs.existsSync(indexHtmlPath)) {
     <meta name="twitter:url" content="https://indiride-web.vercel.app/" />
     <meta name="twitter:title" content="IndiRide (Indi Ride) - Bihar's Smart Ride-Hailing | Founder: Shubham Kumar" />
     <meta name="twitter:description" content="Fast, affordable bike taxi (₹7/km), auto & cab in Bihar & India. Founded by Shubham Kumar (22, Cloud & DevOps Engineer from Bihar | Founded in Gujarat)." />
-    <meta name="twitter:image" content="https://indiride-web.vercel.app/photo.jpeg" />
-    <meta name="twitter:image:alt" content="Shubham Kumar - Founder of IndiRide" />
+    <meta name="twitter:image" content="https://indiride-web.vercel.app/og-image.png" />
+    <meta name="twitter:image:alt" content="IndiRide - India's Smart Ride-Hailing Platform" />
 
     <!-- Structured Data (JSON-LD) -->
     <script type="application/ld+json" id="indiride-rich-schema">

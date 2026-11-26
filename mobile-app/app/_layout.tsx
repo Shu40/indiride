@@ -60,14 +60,14 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
   setMeta('og:type', 'website', true);
   setMeta('og:url', 'https://indiride-web.vercel.app', true);
   setMeta('og:site_name', 'IndiRide', true);
-  setMeta('og:image', 'https://indiride-web.vercel.app/photo.jpeg', true);
-  setMeta('og:image:alt', 'Shubham Kumar - Founder of IndiRide, Cloud and DevOps Engineer from Bihar', true);
+  setMeta('og:image', 'https://indiride-web.vercel.app/og-image.png', true);
+  setMeta('og:image:alt', 'IndiRide - India\'s Smart Ride-Hailing Platform', true);
 
   // Twitter Card
   setMeta('twitter:card', 'summary_large_image');
   setMeta('twitter:title', 'IndiRide (Indi Ride) - Bihar\'s Smart Ride-Hailing | Founder: Shubham Kumar');
   setMeta('twitter:description', 'Fast, affordable bike taxi (₹7/km), auto & cab in Bihar & India. Founded by Shubham Kumar (22, Cloud & DevOps Engineer, Bihar | Gujarat).');
-  setMeta('twitter:image', 'https://indiride-web.vercel.app/photo.jpeg');
+  setMeta('twitter:image', 'https://indiride-web.vercel.app/og-image.png');
 
   // Schema.org Structured Data (Google Rich Snippets, Knowledge Graph & FAQ)
   const existingSchema = document.getElementById('indiride-schema');
@@ -117,7 +117,8 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
           'name': 'IndiRide',
           'alternateName': ['Indi Ride', 'indiride', 'indi ride'],
           'url': 'https://indiride-web.vercel.app',
-          'logo': 'https://indiride-web.vercel.app/photo.jpeg',
+          'logo': 'https://indiride-web.vercel.app/logo.png',
+          'image': 'https://indiride-web.vercel.app/og-image.png',
           'foundingDate': '2024',
           'foundingLocation': {
             '@type': 'Place',
