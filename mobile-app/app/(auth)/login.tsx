@@ -662,6 +662,12 @@ export default function LoginScreen() {
   const safePaddingTop = Math.max(insets.top, Platform.OS === 'android' ? 20 : 12);
   const safePaddingBottom = Math.max(insets.bottom, 16);
   const isSmallScreen = windowHeight < 720;
+  const isLocalhost = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.startsWith('192.168.') ||
+    window.location.hostname.startsWith('10.')
+  );
 
   return (
     <View style={styles.outerContainer}>
@@ -708,15 +714,81 @@ export default function LoginScreen() {
               <Text style={styles.welcomeTagline}>Bihar's Smart Ride-Hailing Network</Text>
             </View>
 
-            {/* Center Hero Video (Plays login.mp4 in continuous loop) */}
+            {/* Center Hero Video & HubDwar Live Spotlight */}
             <View
               style={[
                 styles.welcomeGraphicBox,
-                { height: isSmallScreen ? 260 : Math.min(windowHeight * 0.42, 380) },
+                windowWidth > 640 ? { flexDirection: 'row', gap: 12, height: 320 } : { height: isSmallScreen ? 240 : Math.min(windowHeight * 0.38, 300) },
               ]}
             >
-              <LoginHeroVideo style={styles.welcomeHeroImage} />
+              <View style={[styles.welcomeHeroImage, windowWidth > 640 && { flex: 1.1 }]}>
+                <LoginHeroVideo style={{ width: '100%', height: '100%' }} />
+              </View>
+
+              {/* HubDwar Live Promotion Spotlight (Desktop / Tablet view) */}
+              {windowWidth > 640 && (
+                <TouchableOpacity
+                  style={styles.hubdwarDesktopSideCard}
+                  onPress={() => {
+                    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+                      window.open('https://hubdwar.online', '_blank');
+                    }
+                  }}
+                  activeOpacity={0.88}
+                >
+                  <View style={styles.hubdwarBadgeRow}>
+                    <View style={styles.hubdwarLiveBadge}>
+                      <Text style={styles.hubdwarLiveBadgeText}>SPONSORED • LIVE</Text>
+                    </View>
+                    <View style={styles.hubdwarMonthBadge}>
+                      <Text style={styles.hubdwarMonthBadgeText}>1 MONTH PROMO</Text>
+                    </View>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 8 }}>
+                    <View style={styles.hubdwarIconBox}>
+                      <MaterialCommunityIcons name="code-braces" size={22} color="#38bdf8" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.hubdwarTitle}>HubDwar.online</Text>
+                      <Text style={styles.hubdwarTagline} numberOfLines={1}>India's Biggest Career Platform</Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.hubdwarDescText}>
+                    🔥 Live now for Coding Interview Prep, AI Mock Interviews, ATS Resume Builder, and Top Tech Company Internships &amp; Jobs!
+                  </Text>
+
+                  <View style={styles.hubdwarCtaBtn}>
+                    <Text style={styles.hubdwarCtaBtnText}>Explore HubDwar ➔</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
             </View>
+
+            {/* Mobile View HubDwar Spotlight (shown below video on mobile) */}
+            {windowWidth <= 640 && (
+              <TouchableOpacity
+                style={styles.hubdwarMobileCard}
+                onPress={() => {
+                  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+                    window.open('https://hubdwar.online', '_blank');
+                  }
+                }}
+                activeOpacity={0.88}
+              >
+                <View style={styles.hubdwarBadgeRow}>
+                  <View style={styles.hubdwarLiveBadge}>
+                    <Text style={styles.hubdwarLiveBadgeText}>SPONSORED</Text>
+                  </View>
+                  <Text style={styles.hubdwarMobileTitle} numberOfLines={1}>HubDwar.online • Coding Prep &amp; Careers</Text>
+                  <Ionicons name="open-outline" size={14} color="#38bdf8" />
+                </View>
+                <Text style={styles.hubdwarMobileDesc}>
+                  Coding interview prep, AI mock interviews &amp; top company opportunities.
+                </Text>
+              </TouchableOpacity>
+            )}
 
             {/* Bottom Action Buttons */}
             <View style={styles.welcomeActionsBox}>
@@ -905,54 +977,56 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Feature Testing & 1-Click Demo Accounts */}
-              <View style={styles.tempDemoBox}>
-                <View style={styles.tempDemoHeader}>
-                  <Ionicons name="flask" size={13} color="#f59e0b" />
-                  <Text style={styles.tempDemoTitle}>1-CLICK TEST ACCOUNTS (FEATURE TESTING)</Text>
+              {/* Feature Testing & 1-Click Demo Accounts (Localhost / Development Only) */}
+              {isLocalhost && (
+                <View style={styles.tempDemoBox}>
+                  <View style={styles.tempDemoHeader}>
+                    <Ionicons name="flask" size={13} color="#f59e0b" />
+                    <Text style={styles.tempDemoTitle}>1-CLICK TEST ACCOUNTS (LOCAL DEV ONLY)</Text>
+                  </View>
+                  <View style={styles.tempDemoPillsRow}>
+                    <TouchableOpacity
+                      style={styles.tempDemoPill}
+                      onPress={() => handleDemoLogin('passenger')}
+                      disabled={loading}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="person" size={12} color="#2563EB" />
+                      <Text style={styles.tempDemoPillText}>Passenger</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.tempDemoPill, styles.tempDemoPillDriver]}
+                      onPress={() => handleDemoLogin('rider1')}
+                      disabled={loading}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="bicycle" size={13} color="#16a34a" />
+                      <Text style={[styles.tempDemoPillText, { color: '#15803d' }]}>Driver 1 (Rajesh)</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.tempDemoPill, styles.tempDemoPillCampus]}
+                      onPress={() => handleDemoLogin('rider2')}
+                      disabled={loading}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="car" size={12} color="#059669" />
+                      <Text style={[styles.tempDemoPillText, { color: '#047857' }]}>Driver 2 (Vikram)</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.tempDemoPill, styles.tempDemoPillAdmin]}
+                      onPress={() => handleDemoLogin('admin')}
+                      disabled={loading}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="shield" size={12} color="#7c3aed" />
+                      <Text style={[styles.tempDemoPillText, { color: '#6d28d9' }]}>Admin</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                <View style={styles.tempDemoPillsRow}>
-                  <TouchableOpacity
-                    style={styles.tempDemoPill}
-                    onPress={() => handleDemoLogin('passenger')}
-                    disabled={loading}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons name="person" size={12} color="#2563EB" />
-                    <Text style={styles.tempDemoPillText}>Passenger</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.tempDemoPill, styles.tempDemoPillDriver]}
-                    onPress={() => handleDemoLogin('rider1')}
-                    disabled={loading}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons name="bicycle" size={13} color="#16a34a" />
-                    <Text style={[styles.tempDemoPillText, { color: '#15803d' }]}>Driver 1 (Rajesh)</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.tempDemoPill, styles.tempDemoPillCampus]}
-                    onPress={() => handleDemoLogin('rider2')}
-                    disabled={loading}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons name="car" size={12} color="#059669" />
-                    <Text style={[styles.tempDemoPillText, { color: '#047857' }]}>Driver 2 (Vikram)</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.tempDemoPill, styles.tempDemoPillAdmin]}
-                    onPress={() => handleDemoLogin('admin')}
-                    disabled={loading}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons name="shield" size={12} color="#7c3aed" />
-                    <Text style={[styles.tempDemoPillText, { color: '#6d28d9' }]}>Admin</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+              )}
             </ScrollView>
           </KeyboardAvoidingView>
         )}
@@ -3073,5 +3147,101 @@ const styles = StyleSheet.create<any>({
     fontWeight: '600',
     color: '#2563EB',
     marginTop: 3,
+  },
+  hubdwarDesktopSideCard: {
+    flex: 0.9,
+    backgroundColor: '#0f172a',
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#38bdf8',
+    padding: 16,
+    justifyContent: 'space-between',
+  },
+  hubdwarMobileCard: {
+    backgroundColor: '#0f172a',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#38bdf8',
+    padding: 12,
+    marginTop: 10,
+    marginBottom: 8,
+  },
+  hubdwarBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  hubdwarLiveBadge: {
+    backgroundColor: '#0284c7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  hubdwarLiveBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#ffffff',
+    letterSpacing: 0.5,
+  },
+  hubdwarMonthBadge: {
+    backgroundColor: '#312e81',
+    borderColor: '#6366f1',
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  hubdwarMonthBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#a5b4fc',
+  },
+  hubdwarIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  hubdwarTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#f8fafc',
+  },
+  hubdwarTagline: {
+    fontSize: 11,
+    color: '#38bdf8',
+    fontWeight: '600',
+  },
+  hubdwarDescText: {
+    fontSize: 12,
+    color: '#cbd5e1',
+    lineHeight: 18,
+    marginVertical: 6,
+  },
+  hubdwarCtaBtn: {
+    backgroundColor: '#2563eb',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  hubdwarCtaBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#ffffff',
+  },
+  hubdwarMobileTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#f8fafc',
+    flex: 1,
+  },
+  hubdwarMobileDesc: {
+    fontSize: 11,
+    color: '#94a3b8',
+    marginTop: 4,
+    lineHeight: 15,
   },
 });

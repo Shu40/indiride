@@ -80,3 +80,8 @@ Thumbs.db
 *.swo
 .vscode/
 .idea/
+
+RENDER_ENV_COPY_PASTE.txt
+*.env
+*.env.local
+

@@ -146,7 +146,7 @@ On the login/signup screen ([http://localhost:8081](http://localhost:8081)):
    - Trip enters `IN_PROGRESS` with live GPS navigation.
    - Tap **"Complete Ride"** $\rightarrow$ Earnings added to driver dashboard.
 3. **🟣 Admin Mode:**
-   - Log in with System Administrator account: `admin@ridehailing.app` (Phone: `+919999999999`).
-   - View gross platform booking volume and platform commission.
-   - Adjust Bike (₹7/km) and Car (₹15/km) rates and click **"Save Updated Rates"**.
-   - Review registered driver KYC documents and toggle approval status (**Approve** / **Suspend** / **Reject**).
+   - Log in with designated Authorized Administrator credentials.
+   - View gross platform booking volume, driver earnings, and commission breakdown.
+   - Adjust Bike (₹7/km) and Car (₹15/km) rates and save updated rates in real-time.
+   - Review registered driver KYC documents (Driver Photo, Driving License, PAN, Aadhaar) and manage approval status (**Approve** / **Suspend** / **Reject**).
