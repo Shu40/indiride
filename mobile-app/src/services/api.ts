@@ -860,6 +860,12 @@ export const api = {
       return apiRequest<University[]>(`/campus-rides/universities${str ? `?${str}` : ''}`);
     },
 
+    createUniversity: (payload: { name: string; short_name?: string; city?: string; state?: string }) =>
+      apiRequest<University>('/campus-rides/universities', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
     getCampuses: (universityId: string) =>
       apiRequest<Campus[]>(`/campus-rides/universities/${universityId}/campuses`),
 

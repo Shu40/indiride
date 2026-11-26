@@ -14,6 +14,7 @@ import { api } from '../../services/api';
 import { PassengerRideRequestItem } from '../../types';
 import { CampusPostRideView } from './CampusPostRideView';
 import { CampusMyPostedView, PostedRideType } from './CampusMyPostedView';
+import { InstitutionMultiSelectModal } from './InstitutionMultiSelectModal';
 
 type DriverCampusSubTab = 'post' | 'studentRequests' | 'settings' | 'activeRides';
 
@@ -37,6 +38,7 @@ export const CampusDriverPanel: React.FC = () => {
   const [editServiceType, setEditServiceType] = useState<string>('CAMPUS');
   const [savingSettings, setSavingSettings] = useState<boolean>(false);
   const [newUniInput, setNewUniInput] = useState<string>('');
+  const [showUniModal, setShowUniModal] = useState<boolean>(false);
 
   // Active Posted Rides & Bookings
   const [postedRides, setPostedRides] = useState<PostedRideType[]>([]);
@@ -516,9 +518,25 @@ export const CampusDriverPanel: React.FC = () => {
                 </View>
 
                 {/* Active Served Universities List */}
-                <Text style={[styles.settingLabel, { marginTop: 16 }]}>
-                  Active Served Colleges ({editServedUnis.split(',').filter((u) => u.trim()).length}):
-                </Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, marginBottom: 6 }}>
+                  <Text style={[styles.settingLabel, { marginTop: 0 }]}>
+                    Active Served Colleges ({editServedUnis.split(',').filter((u) => u.trim()).length}):
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setShowUniModal(true)}
+                    style={{
+                      backgroundColor: '#16a34a',
+                      paddingHorizontal: 10,
+                      paddingVertical: 5,
+                      borderRadius: 8,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Ionicons name="list" size={13} color="#ffffff" style={{ marginRight: 4 }} />
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#ffffff' }}>Browse Gujarat List</Text>
+                  </TouchableOpacity>
+                </View>
 
                 {editServedUnis.split(',').filter((u) => u.trim()).length === 0 ? (
                   <View style={styles.noUnisNotice}>
@@ -575,6 +593,16 @@ export const CampusDriverPanel: React.FC = () => {
           </ScrollView>
         )}
       </View>
+
+      {/* Gujarat Institutions Multi-Select Modal */}
+      <InstitutionMultiSelectModal
+        visible={showUniModal}
+        onClose={() => setShowUniModal(false)}
+        selectedInstitutions={editServedUnis}
+        onConfirm={(updated) => setEditServedUnis(updated)}
+        title="Gujarat Universities, Colleges & Schools"
+        subtitle="Manage the institutions you serve for student rides"
+      />
     </View>
   );
 };

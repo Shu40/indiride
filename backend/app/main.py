@@ -413,6 +413,13 @@ def seed_initial_data(db: Session):
     ).delete(synchronize_session=False)
     db.flush()
 
+    # Seed all Gujarat Government & Private Universities, Colleges, and Schools
+    try:
+        from app.seeds.gujarat_institutions import seed_gujarat_institutions
+        seed_gujarat_institutions(db)
+    except Exception as e:
+        logger.warning(f"Error seeding Gujarat institutions: {e}")
+
     db.commit()
 
 

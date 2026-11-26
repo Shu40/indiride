@@ -57,8 +57,8 @@ def normalize_date_key(raw_date: Optional[str]) -> str:
 class UniversityCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=150)
     short_name: Optional[str] = Field(default=None, max_length=50)
-    city: str = Field(..., min_length=2, max_length=100)
-    state: str = Field(..., min_length=2, max_length=100)
+    city: Optional[str] = Field(default="Gujarat", max_length=100)
+    state: Optional[str] = Field(default="Gujarat", max_length=100)
     country: Optional[str] = Field(default="India")
     logo_url: Optional[str] = None
 
@@ -225,6 +225,39 @@ def get_universities(
     
     unis = q.order_by(University.name.asc()).all()
     return [serialize_university(u) for u in unis]
+
+
+@router.post("/universities", response_model=UniversityResponse)
+def create_or_get_university(
+    data: UniversityCreate,
+    db: Session = Depends(get_db)
+):
+    """
+    Register a new University, College, or School (e.g. via 'Other' selection).
+    If it already exists by name, returns the existing record.
+    Otherwise creates and persists it in the database for all future drivers and passengers.
+    """
+    clean_name = data.name.strip()
+    existing = db.query(University).filter(
+        func.lower(University.name) == clean_name.lower()
+    ).first()
+    if existing:
+        return serialize_university(existing)
+
+    new_uni = University(
+        id=str(uuid.uuid4()),
+        name=clean_name,
+        short_name=data.short_name.strip() if data.short_name else None,
+        city=data.city.strip() if data.city else "Gujarat",
+        state=data.state.strip() if data.state else "Gujarat",
+        country=data.country or "India",
+        status="ACTIVE",
+        logo_url=data.logo_url
+    )
+    db.add(new_uni)
+    db.commit()
+    db.refresh(new_uni)
+    return serialize_university(new_uni)
 
 
 @router.get("/universities/{university_id}/campuses", response_model=List[CampusResponse])

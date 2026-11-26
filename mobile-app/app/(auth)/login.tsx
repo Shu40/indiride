@@ -25,6 +25,7 @@ import { UserRole } from '../../src/types';
 import { LoginHeroVideo } from '../../src/components/LoginHeroVideo';
 import { FounderStoryModal } from '../../src/components/FounderStoryModal';
 import { PlayStoreComingSoonModal } from '../../src/components/PlayStoreComingSoonModal';
+import { InstitutionMultiSelectModal } from '../../src/components/campus/InstitutionMultiSelectModal';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -59,6 +60,7 @@ export default function LoginScreen() {
   const [riderServiceType, setRiderServiceType] = useState<'REGULAR' | 'CAMPUS'>('CAMPUS');
   const [servedUniversities, setServedUniversities] = useState('Parul University, Vadodara');
   const [collegeName, setCollegeName] = useState('Parul University');
+  const [showUniPickerModal, setShowUniPickerModal] = useState(false);
   const [academicYear, setAcademicYear] = useState('Final Year (2024-25)');
   const [studentIdNumber, setStudentIdNumber] = useState('');
   const [studentIdPhoto, setStudentIdPhoto] = useState<string>('');
@@ -339,8 +341,9 @@ export default function LoginScreen() {
 
       if (role === 'rider') {
         if (riderServiceType === 'CAMPUS') {
-          if (!collegeName.trim()) {
-            setError('Please enter your College or University name');
+          const unisToSave = servedUniversities.trim() || collegeName.trim();
+          if (!unisToSave) {
+            setError('Please select at least one Gujarat University, College or School');
             setLoading(false);
             return;
           }
@@ -362,8 +365,8 @@ export default function LoginScreen() {
           }
 
           payload.rider_service_type = 'CAMPUS';
-          payload.college_name = collegeName.trim();
-          payload.served_universities = collegeName.trim();
+          payload.college_name = unisToSave.split(',')[0].trim();
+          payload.served_universities = unisToSave;
           payload.academic_year = academicYear.trim() || 'Current Academic Year';
           payload.student_id_number = studentIdNumber.trim();
           payload.student_id_photo = studentIdPhoto || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400';
@@ -397,6 +400,8 @@ export default function LoginScreen() {
           }
 
           payload.rider_service_type = 'REGULAR';
+          payload.served_universities = servedUniversities.trim() || 'Gujarat City Routes';
+          payload.college_name = servedUniversities.trim() ? servedUniversities.split(',')[0].trim() : undefined;
           payload.license_number = licenseNumber.trim().toUpperCase();
           payload.aadhaar_number = aadhaarNumber.trim();
           payload.vehicle_category = vehicleCategory;
@@ -1034,29 +1039,109 @@ export default function LoginScreen() {
                   </View>
 
                   {riderServiceType === 'CAMPUS' ? (
-                    <View style={{ marginBottom: 14, backgroundColor: '#f0fdf4', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#bbf7d0' }}>
-                      <Text style={[styles.inputFieldLabel, { color: '#166534', marginTop: 0 }]}>
-                        Served Universities / Colleges *
-                      </Text>
-                      <View style={[styles.textInputBox, { backgroundColor: '#ffffff', borderColor: '#86efac' }]}>
-                        <Ionicons name="business" size={16} color="#16a34a" style={{ marginRight: 8 }} />
-                        <TextInput
-                          style={styles.textInputInside}
-                          placeholder="e.g. Parul University, MSU, Delhi University"
-                          placeholderTextColor="#94a3b8"
-                          value={servedUniversities}
-                          onChangeText={setServedUniversities}
-                        />
+                    <View style={{ marginBottom: 14, backgroundColor: '#f0fdf4', padding: 12, borderRadius: 12, borderWidth: 1.5, borderColor: '#86efac' }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                        <Text style={[styles.inputFieldLabel, { color: '#166534', marginTop: 0, fontWeight: '800' }]}>
+                          Served Gujarat Universities & Schools *
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => setShowUniPickerModal(true)}
+                          style={{
+                            backgroundColor: '#16a34a',
+                            paddingHorizontal: 10,
+                            paddingVertical: 5,
+                            borderRadius: 8,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <Ionicons name="list" size={14} color="#ffffff" style={{ marginRight: 4 }} />
+                          <Text style={{ fontSize: 11, fontWeight: '700', color: '#ffffff' }}>Browse Gujarat List</Text>
+                        </TouchableOpacity>
                       </View>
-                      <Text style={{ fontSize: 11, color: '#15803d', marginTop: 4 }}>
-                        💡 Multiple universities can be entered separated by comma (,). You will exclusively serve students commuting to/from these campuses.
+
+                      {/* Clickable Card to open Modal */}
+                      <TouchableOpacity
+                        onPress={() => setShowUniPickerModal(true)}
+                        activeOpacity={0.8}
+                        style={{
+                          backgroundColor: '#ffffff',
+                          borderWidth: 1.5,
+                          borderColor: '#86efac',
+                          borderRadius: 10,
+                          padding: 10,
+                          marginTop: 4,
+                        }}
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
+                            <Ionicons name="school" size={18} color="#16a34a" style={{ marginRight: 8 }} />
+                            <Text style={{ fontSize: 13, fontWeight: '700', color: '#15803d' }}>
+                              {servedUniversities.split(',').filter(s => s.trim()).length > 0
+                                ? `${servedUniversities.split(',').filter(s => s.trim()).length} Institutions Selected (Tap to edit)`
+                                : 'Select Gujarat Universities / Colleges / Schools...'}
+                            </Text>
+                          </View>
+                          <Ionicons name="chevron-forward" size={18} color="#16a34a" />
+                        </View>
+
+                        {/* Selected Chips inside card */}
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                          {servedUniversities
+                            .split(',')
+                            .map((u) => u.trim())
+                            .filter(Boolean)
+                            .map((uName, uIdx) => (
+                              <View
+                                key={uIdx}
+                                style={{
+                                  backgroundColor: '#dcfce7',
+                                  borderWidth: 1,
+                                  borderColor: '#86efac',
+                                  borderRadius: 16,
+                                  paddingHorizontal: 8,
+                                  paddingVertical: 3,
+                                  flexDirection: 'row',
+                                  alignItems: 'center',
+                                }}
+                              >
+                                <Ionicons name="checkmark-circle" size={12} color="#16a34a" style={{ marginRight: 4 }} />
+                                <Text style={{ fontSize: 11, fontWeight: '600', color: '#166534', maxWidth: 220 }} numberOfLines={1}>
+                                  {uName}
+                                </Text>
+                              </View>
+                            ))}
+                        </View>
+                      </TouchableOpacity>
+
+                      <Text style={{ fontSize: 11, color: '#15803d', marginTop: 8 }}>
+                        💡 Tap above to search & select multiple Gujarat universities, colleges, and schools or add a new one via "Other".
                       </Text>
                     </View>
                   ) : (
-                    <View style={{ marginBottom: 12, backgroundColor: '#f8fafc', padding: 8, borderRadius: 8 }}>
-                      <Text style={{ fontSize: 11, color: '#64748b' }}>
-                        🚕 Regular City Driver operates across all general city routes and airport corridors.
-                      </Text>
+                    <View style={{ marginBottom: 12, backgroundColor: '#f8fafc', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0' }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 11, color: '#475569', fontWeight: '600', flex: 1 }}>
+                          🚕 Regular City Driver operates across all general city routes, airport corridors, and universities.
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => setShowUniPickerModal(true)}
+                          style={{
+                            backgroundColor: '#2563eb',
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            borderRadius: 6,
+                            marginLeft: 8,
+                          }}
+                        >
+                          <Text style={{ fontSize: 10, fontWeight: '700', color: '#ffffff' }}>Add Campuses</Text>
+                        </TouchableOpacity>
+                      </View>
+                      {servedUniversities.trim() && (
+                        <Text style={{ fontSize: 10, color: '#0284c7', marginTop: 4 }}>
+                          Included hubs: {servedUniversities}
+                        </Text>
+                      )}
                     </View>
                   )}
 
@@ -1477,16 +1562,85 @@ export default function LoginScreen() {
                         </Text>
                       </View>
 
-                      <Text style={styles.inputFieldLabel}>College / University Name *</Text>
-                      <View style={styles.textInputBox}>
-                        <Ionicons name="business-outline" size={16} color="#059669" style={{ marginRight: 8 }} />
-                        <TextInput
-                          style={styles.textInputInside}
-                          placeholder="e.g. Parul University, Vadodara"
-                          placeholderTextColor="#94a3b8"
-                          value={collegeName}
-                          onChangeText={setCollegeName}
-                        />
+                      {/* Served Gujarat Universities, Colleges & Schools Selector */}
+                      <View style={{ marginBottom: 14, backgroundColor: '#f0fdf4', padding: 12, borderRadius: 12, borderWidth: 1.5, borderColor: '#86efac' }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                          <Text style={[styles.inputFieldLabel, { color: '#166534', marginTop: 0, fontWeight: '800' }]}>
+                            Served Gujarat Universities & Schools *
+                          </Text>
+                          <TouchableOpacity
+                            onPress={() => setShowUniPickerModal(true)}
+                            style={{
+                              backgroundColor: '#16a34a',
+                              paddingHorizontal: 10,
+                              paddingVertical: 5,
+                              borderRadius: 8,
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                            }}
+                          >
+                            <Ionicons name="list" size={14} color="#ffffff" style={{ marginRight: 4 }} />
+                            <Text style={{ fontSize: 11, fontWeight: '700', color: '#ffffff' }}>Browse Gujarat List</Text>
+                          </TouchableOpacity>
+                        </View>
+
+                        {/* Clickable Card to open Modal */}
+                        <TouchableOpacity
+                          onPress={() => setShowUniPickerModal(true)}
+                          activeOpacity={0.8}
+                          style={{
+                            backgroundColor: '#ffffff',
+                            borderWidth: 1.5,
+                            borderColor: '#86efac',
+                            borderRadius: 10,
+                            padding: 10,
+                            marginTop: 4,
+                          }}
+                        >
+                          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
+                              <Ionicons name="school" size={18} color="#16a34a" style={{ marginRight: 8 }} />
+                              <Text style={{ fontSize: 13, fontWeight: '700', color: '#15803d' }}>
+                                {servedUniversities.split(',').filter(s => s.trim()).length > 0
+                                  ? `${servedUniversities.split(',').filter(s => s.trim()).length} Institutions Selected (Tap to edit)`
+                                  : 'Select Gujarat Universities / Colleges / Schools...'}
+                              </Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={18} color="#16a34a" />
+                          </View>
+
+                          {/* Selected Chips inside card */}
+                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                            {servedUniversities
+                              .split(',')
+                              .map((u) => u.trim())
+                              .filter(Boolean)
+                              .map((uName, uIdx) => (
+                                <View
+                                  key={uIdx}
+                                  style={{
+                                    backgroundColor: '#dcfce7',
+                                    borderWidth: 1,
+                                    borderColor: '#86efac',
+                                    borderRadius: 16,
+                                    paddingHorizontal: 8,
+                                    paddingVertical: 3,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                  }}
+                                >
+                                  <Ionicons name="checkmark-circle" size={12} color="#16a34a" style={{ marginRight: 4 }} />
+                                  <Text style={{ fontSize: 11, fontWeight: '600', color: '#166534', maxWidth: 220 }} numberOfLines={1}>
+                                    {uName}
+                                  </Text>
+                                </View>
+                              ))}
+                          </View>
+                        </TouchableOpacity>
+
+                        <Text style={{ fontSize: 11, color: '#15803d', marginTop: 8 }}>
+                          💡 Tap above to search & select multiple Gujarat universities, colleges, and schools or add a new one via "Other".
+                        </Text>
                       </View>
 
                       <Text style={styles.inputFieldLabel}>Academic Year / Validity *</Text>
@@ -2295,6 +2449,22 @@ export default function LoginScreen() {
       <PlayStoreComingSoonModal
         visible={playStoreModalVisible}
         onClose={() => setPlayStoreModalVisible(false)}
+      />
+
+      {/* Gujarat Institutions Multi-Select Modal */}
+      <InstitutionMultiSelectModal
+        visible={showUniPickerModal}
+        onClose={() => setShowUniPickerModal(false)}
+        selectedInstitutions={servedUniversities}
+        onConfirm={(updated) => {
+          setServedUniversities(updated);
+          if (updated) {
+            const first = updated.split(',')[0].trim();
+            if (first) setCollegeName(first);
+          }
+        }}
+        title="Gujarat Universities, Colleges & Schools"
+        subtitle="Select all institutions you want to serve as an IndiRide driver partner"
       />
     </View>
   );
