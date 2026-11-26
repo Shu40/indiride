@@ -28,6 +28,7 @@ import { PlayStoreComingSoonModal } from '../../src/components/PlayStoreComingSo
 import { InstitutionMultiSelectModal } from '../../src/components/campus/InstitutionMultiSelectModal';
 import { PendingDriverApprovalModal } from '../../src/components/PendingDriverApprovalModal';
 import { AIVoiceCallVerificationModal } from '../../src/components/AIVoiceCallVerificationModal';
+import { FareSavingsModal } from '../../src/components/FareSavingsModal';
 import { INDIAN_STATES_CITIES } from '../../src/data/indianLocations';
 
 export default function LoginScreen() {
@@ -139,6 +140,7 @@ export default function LoginScreen() {
   const [pendingGoogleName, setPendingGoogleName] = useState('');
   const [founderModalVisible, setFounderModalVisible] = useState(false);
   const [playStoreModalVisible, setPlayStoreModalVisible] = useState(false);
+  const [savingsModalVisible, setSavingsModalVisible] = useState(false);
   const [findAccountModal, setFindAccountModal] = useState(false);
   const [searchIdent, setSearchIdent] = useState('');
   const [foundAccount, setFoundAccount] = useState<any>(null);
@@ -696,7 +698,7 @@ export default function LoginScreen() {
           </View>
           <View style={styles.watermarkBandGreen} />
         </View>
-        {/* Top Play Store Coming Soon Banner */}
+        {/* Top Play Store & Live Driver Status Bar */}
         <View style={styles.topAnnouncementBar}>
           <TouchableOpacity
             style={styles.announcementPill}
@@ -705,10 +707,16 @@ export default function LoginScreen() {
           >
             <Ionicons name="logo-google-playstore" size={13} color="#059669" />
             <Text style={styles.announcementPillText} numberOfLines={1}>
-              APK Coming Tomorrow on Play Store • Web Live Today
+              APK Tomorrow • Web Live
             </Text>
             <Ionicons name="chevron-forward" size={12} color="#059669" />
           </TouchableOpacity>
+
+          {/* Option 2: Live Active Drivers Pulse */}
+          <View style={styles.liveDriverPulsePill}>
+            <View style={styles.liveGreenDot} />
+            <Text style={styles.liveDriverText}>120+ Drivers Live</Text>
+          </View>
         </View>
 
         {/* ================= 1. WELCOME ONBOARDING SCREEN (Exact IndiRide Aesthetic) ================= */}
@@ -888,6 +896,23 @@ export default function LoginScreen() {
                 </View>
               </View>
             </View>
+
+            {/* Options 3 & 4: Student 15% OFF & Ride Savings Calculator Pill */}
+            <TouchableOpacity
+              style={styles.savingsCalculatorPill}
+              onPress={() => setSavingsModalVisible(true)}
+              activeOpacity={0.88}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                <Text style={{ fontSize: 13 }}>🎓</Text>
+                <Text style={styles.savingsCalculatorPillText} numberOfLines={1}>
+                  <Text style={{ fontWeight: '800', color: '#1e3a8a' }}>Student 15% OFF</Text> • Calculate Ride Savings
+                </Text>
+              </View>
+              <View style={styles.savingsActionPill}>
+                <Text style={styles.savingsActionText}>Check ➔</Text>
+              </View>
+            </TouchableOpacity>
 
             {/* Trust & Safety Assurance Row */}
             <View style={styles.trustBadgesRow}>
@@ -2420,6 +2445,17 @@ export default function LoginScreen() {
         onClose={() => setPlayStoreModalVisible(false)}
       />
 
+      {/* Interactive Fare Savings Calculator Modal */}
+      <FareSavingsModal
+        visible={savingsModalVisible}
+        onClose={() => setSavingsModalVisible(false)}
+        onBookRide={() => {
+          setSavingsModalVisible(false);
+          setError('');
+          setViewMode('login');
+        }}
+      />
+
       {/* Universities & Colleges Multi-Select Modal */}
       <InstitutionMultiSelectModal
         visible={showUniPickerModal}
@@ -2516,20 +2552,23 @@ const styles = StyleSheet.create<any>({
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 6,
-    gap: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     backgroundColor: '#f8fafc',
     borderBottomWidth: 1,
     borderBottomColor: '#f1f5f9',
   },
   announcementPill: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ecfdf5',
     borderWidth: 1,
     borderColor: '#a7f3d0',
     borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     gap: 6,
   },
   announcementPillText: {
@@ -2537,6 +2576,28 @@ const styles = StyleSheet.create<any>({
     fontSize: 11,
     fontWeight: '700',
     color: '#065f46',
+  },
+  liveDriverPulsePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0fdf4',
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    gap: 5,
+  },
+  liveGreenDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#16a34a',
+  },
+  liveDriverText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#15803d',
   },
   founderMiniPill: {
     alignSelf: 'flex-start',
@@ -2764,6 +2825,37 @@ const styles = StyleSheet.create<any>({
     fontSize: 9,
     color: '#94a3b8',
     fontWeight: '600',
+  },
+  savingsCalculatorPill: {
+    backgroundColor: '#eff6ff',
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+    borderRadius: 12,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 2,
+    marginBottom: 4,
+    width: '100%',
+  },
+  savingsCalculatorPillText: {
+    fontSize: 11,
+    color: '#1e293b',
+    fontWeight: '500',
+    flex: 1,
+  },
+  savingsActionPill: {
+    backgroundColor: '#2563eb',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  savingsActionText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#ffffff',
   },
   trustBadgesRow: {
     flexDirection: 'row',
