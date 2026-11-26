@@ -33,9 +33,18 @@ export const getApiBaseUrl = () => {
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL.replace(/\/$/, '');
   }
-  if (typeof window !== 'undefined' && window.location?.hostname && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
-    const protocol = window.location.protocol === 'https:' ? 'https' : 'http';
-    return `${protocol}://${window.location.hostname}:8001/api`;
+  if (typeof window !== 'undefined') {
+    const customApi = window.localStorage?.getItem('custom_api_url');
+    if (customApi) return customApi.replace(/\/$/, '');
+
+    const host = window.location?.hostname || '';
+    if (host.includes('vercel.app')) {
+      return 'https://indiride-api.onrender.com/api';
+    }
+    if (host && !['localhost', '127.0.0.1'].includes(host)) {
+      const protocol = window.location.protocol === 'https:' ? 'https' : 'http';
+      return `${protocol}://${host}:8001/api`;
+    }
   }
   return `http://${getHostname()}:8001/api`;
 };
@@ -44,9 +53,18 @@ export const getWsBaseUrl = () => {
   if (process.env.EXPO_PUBLIC_WS_URL) {
     return process.env.EXPO_PUBLIC_WS_URL.replace(/\/$/, '');
   }
-  if (typeof window !== 'undefined' && window.location?.hostname && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    return `${wsProtocol}://${window.location.hostname}:8001/api/ws`;
+  if (typeof window !== 'undefined') {
+    const customWs = window.localStorage?.getItem('custom_ws_url');
+    if (customWs) return customWs.replace(/\/$/, '');
+
+    const host = window.location?.hostname || '';
+    if (host.includes('vercel.app')) {
+      return 'wss://indiride-api.onrender.com/api/ws';
+    }
+    if (host && !['localhost', '127.0.0.1'].includes(host)) {
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+      return `${wsProtocol}://${host}:8001/api/ws`;
+    }
   }
   return `ws://${getHostname()}:8001/api/ws`;
 };

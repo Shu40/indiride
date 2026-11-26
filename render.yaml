@@ -45,7 +45,7 @@ services:
     region: singapore
     plan: free
     rootDir: mobile-app
-    buildCommand: npm install && npx expo export -p web
+    buildCommand: npm install && npm run build:web
     publishDir: dist
     routes:
       - type: rewrite
