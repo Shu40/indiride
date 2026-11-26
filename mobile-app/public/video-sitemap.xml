@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
+  <url>
+    <loc>https://indiride-web.vercel.app/</loc>
+    <video:video>
+      <video:thumbnail_loc>https://indiride-web.vercel.app/photo.jpeg</video:thumbnail_loc>
+      <video:title>IndiRide - India's Smart Ride-Hailing Network (Official Promo Video)</video:title>
+      <video:description>Official promotional video of IndiRide founded by Shubham Kumar. Highlights ₹7/km bike taxi, ₹10/km auto, ₹15/km cab, 15% student discount, and zero surge pricing.</video:description>
+      <video:content_loc>https://indiride-web.vercel.app/indiride_promo_video.mp4</video:content_loc>
+      <video:player_loc>https://indiride-web.vercel.app/indiride_promo_video.mp4</video:player_loc>
+      <video:duration>42</video:duration>
+      <video:publication_date>2026-11-26T10:00:00+05:30</video:publication_date>
+      <video:family_friendly>yes</video:family_friendly>
+      <video:uploader info="https://indiride-web.vercel.app/">Shubham Kumar</video:uploader>
+      <video:live>no</video:live>
+    </video:video>
+  </url>
+  <url>
+    <loc>https://indiride-web.vercel.app/login</loc>
+    <video:video>
+      <video:thumbnail_loc>https://indiride-web.vercel.app/photo.jpeg</video:thumbnail_loc>
+      <video:title>IndiRide - India's Smart Ride-Hailing Network (Official Promo Video)</video:title>
+      <video:description>Official promotional video of IndiRide founded by Shubham Kumar. Highlights ₹7/km bike taxi, ₹10/km auto, ₹15/km cab, 15% student discount, and zero surge pricing.</video:description>
+      <video:content_loc>https://indiride-web.vercel.app/indiride_promo_video.mp4</video:content_loc>
+      <video:player_loc>https://indiride-web.vercel.app/indiride_promo_video.mp4</video:player_loc>
+      <video:duration>42</video:duration>
+      <video:publication_date>2026-11-26T10:00:00+05:30</video:publication_date>
+      <video:family_friendly>yes</video:family_friendly>
+      <video:uploader info="https://indiride-web.vercel.app/">Shubham Kumar</video:uploader>
+      <video:live>no</video:live>
+    </video:video>
+  </url>
+</urlset>

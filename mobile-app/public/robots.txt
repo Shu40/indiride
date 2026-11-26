@@ -9,5 +9,7 @@ Allow: /photo.jpeg
 Allow: /photo.jpg
 Allow: /founder.jpg
 Allow: /shubham-kumar.jpg
+Allow: /indiride_promo_video.mp4
 
 Sitemap: https://indiride-web.vercel.app/sitemap.xml
+Sitemap: https://indiride-web.vercel.app/video-sitemap.xml

@@ -204,6 +204,31 @@ const masterSeoSchema = {
           }
         }
       ]
+    },
+    {
+      "@type": "VideoObject",
+      "@id": "https://indiride-web.vercel.app/#promo-video",
+      "name": "IndiRide - India's Smart Ride-Hailing Network (Official Promo Video)",
+      "description": "Official launch and overview video of IndiRide (Indi Ride) founded by Shubham Kumar. Demonstrates ₹7/km bike taxi, ₹10/km auto, ₹15/km cab, 15% student discount, zero surge pricing, and automated AI driver voice verification.",
+      "thumbnailUrl": [
+        "https://indiride-web.vercel.app/photo.jpeg",
+        "https://indiride-web.vercel.app/assets/goride_hero.jpg"
+      ],
+      "uploadDate": "2026-11-26T10:00:00+05:30",
+      "duration": "PT42S",
+      "contentUrl": "https://indiride-web.vercel.app/indiride_promo_video.mp4",
+      "embedUrl": "https://indiride-web.vercel.app/indiride_promo_video.mp4",
+      "interactionStatistic": {
+        "@type": "InteractionCounter",
+        "interactionType": { "@type": "WatchAction" },
+        "userInteractionCount": 1420
+      },
+      "publisher": {
+        "@id": "https://indiride-web.vercel.app/#organization"
+      },
+      "creator": {
+        "@id": "https://indiride-web.vercel.app/#founder"
+      }
     }
   ]
 };
@@ -247,6 +272,16 @@ if (fs.existsSync(indexHtmlPath)) {
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="1200" />
     <meta property="og:image:alt" content="Shubham Kumar - Founder & CEO of IndiRide, 22-year-old Cloud and DevOps Engineer from Bihar, India" />
+
+    <!-- Open Graph Video / Social Media Video Preview -->
+    <meta property="og:video" content="https://indiride-web.vercel.app/indiride_promo_video.mp4" />
+    <meta property="og:video:secure_url" content="https://indiride-web.vercel.app/indiride_promo_video.mp4" />
+    <meta property="og:video:type" content="video/mp4" />
+    <meta property="og:video:width" content="1280" />
+    <meta property="og:video:height" content="720" />
+    <meta name="twitter:player" content="https://indiride-web.vercel.app/indiride_promo_video.mp4" />
+    <meta name="twitter:player:width" content="1280" />
+    <meta name="twitter:player:height" content="720" />
 
     <!-- Twitter / X Card -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -294,6 +329,14 @@ ${JSON.stringify(masterSeoSchema, null, 2)}
             <li><strong>Safety &amp; Tracking:</strong> Real-time live GPS driver tracking with guaranteed 4-digit safety pickup PIN.</li>
             <li><strong>24x7 Support:</strong> Instant assistance and emergency SOS capabilities.</li>
           </ul>
+        </section>
+        <section id="official-video">
+          <h2>Official IndiRide Promotional Video</h2>
+          <p>Watch the official product tour of IndiRide, highlighting affordable ₹7/km bike rides, ₹10/km auto rides, ₹15/km cab rides, campus discounts, and zero surge pricing.</p>
+          <video controls width="1280" height="720" poster="/photo.jpeg">
+            <source src="/indiride_promo_video.mp4" type="video/mp4" />
+            <a href="/indiride_promo_video.mp4">Download IndiRide Official Promo Video (MP4)</a>
+          </video>
         </section>
       </main>
     </div>
