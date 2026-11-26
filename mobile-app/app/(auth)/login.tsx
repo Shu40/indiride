@@ -848,11 +848,62 @@ export default function LoginScreen() {
             <View
               style={[
                 styles.welcomeGraphicBox,
-                { height: isSmallScreen ? 260 : Math.min(windowHeight * 0.42, 380) },
+                { height: isSmallScreen ? 250 : Math.min(windowHeight * 0.40, 360) },
               ]}
             >
               <View style={styles.welcomeHeroImage}>
                 <LoginHeroVideo style={{ width: '100%', height: '100%' }} />
+              </View>
+            </View>
+
+            {/* Transparent Live Pricing Highlights (Zero Surge Guarantee) */}
+            <View style={styles.fareHighlightRow}>
+              <View style={styles.fareHighlightChip}>
+                <View style={[styles.fareIconDot, { backgroundColor: '#fff7ed' }]}>
+                  <Ionicons name="bicycle" size={13} color="#ea580c" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.fareVehicleName} numberOfLines={1}>Bike Taxi</Text>
+                  <Text style={styles.farePriceText}>₹7<Text style={styles.fareKmText}>/km</Text></Text>
+                </View>
+              </View>
+
+              <View style={styles.fareHighlightChip}>
+                <View style={[styles.fareIconDot, { backgroundColor: '#ecfdf5' }]}>
+                  <MaterialCommunityIcons name="rickshaw" size={14} color="#059669" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.fareVehicleName} numberOfLines={1}>Auto Rickshaw</Text>
+                  <Text style={styles.farePriceText}>₹10<Text style={styles.fareKmText}>/km</Text></Text>
+                </View>
+              </View>
+
+              <View style={styles.fareHighlightChip}>
+                <View style={[styles.fareIconDot, { backgroundColor: '#eff6ff' }]}>
+                  <Ionicons name="car-sport" size={13} color="#2563eb" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.fareVehicleName} numberOfLines={1}>Cab / Mini</Text>
+                  <Text style={styles.farePriceText}>₹15<Text style={styles.fareKmText}>/km</Text></Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Trust & Safety Assurance Row */}
+            <View style={styles.trustBadgesRow}>
+              <View style={styles.trustBadgeItem}>
+                <Ionicons name="shield-checkmark" size={12} color="#16a34a" />
+                <Text style={styles.trustBadgeText}>KYC Verified</Text>
+              </View>
+              <View style={styles.trustDotDivider} />
+              <View style={styles.trustBadgeItem}>
+                <Ionicons name="flash" size={11} color="#f59e0b" />
+                <Text style={styles.trustBadgeText}>0% Surge</Text>
+              </View>
+              <View style={styles.trustDotDivider} />
+              <View style={styles.trustBadgeItem}>
+                <Ionicons name="lock-closed" size={11} color="#0284c7" />
+                <Text style={styles.trustBadgeText}>4-Digit PIN</Text>
               </View>
             </View>
 
@@ -2668,39 +2719,115 @@ const styles = StyleSheet.create<any>({
     width: '100%',
     height: '100%',
   },
+  fareHighlightRow: {
+    flexDirection: 'row',
+    gap: 8,
+    width: '100%',
+    marginTop: 2,
+    marginBottom: 4,
+  },
+  fareHighlightChip: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    paddingVertical: 7,
+    paddingHorizontal: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  fareIconDot: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fareVehicleName: {
+    fontSize: 10,
+    color: '#64748b',
+    fontWeight: '600',
+  },
+  farePriceText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  fareKmText: {
+    fontSize: 9,
+    color: '#94a3b8',
+    fontWeight: '600',
+  },
+  trustBadgesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 4,
+    marginBottom: 6,
+    width: '100%',
+  },
+  trustBadgeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  trustBadgeText: {
+    fontSize: 11,
+    color: '#475569',
+    fontWeight: '600',
+  },
+  trustDotDivider: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#cbd5e1',
+  },
   welcomeActionsBox: {
     width: '100%',
     gap: 12,
-    paddingTop: 8,
+    paddingTop: 4,
   },
   primaryDarkBtn: {
-    backgroundColor: '#1E2530',
+    backgroundColor: '#0f172a',
     borderRadius: 16,
-    paddingVertical: 17,
+    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 4px 8px rgba(30, 37, 48, 0.2)',
+    borderWidth: 1.2,
+    borderColor: '#1e293b',
+    shadowColor: '#0284c7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
     elevation: 3,
   },
   primaryDarkBtnText: {
     color: '#ffffff',
     fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.2,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   secondaryLightBtn: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f8fafc',
     borderWidth: 1.5,
-    borderColor: '#e2e8f0',
+    borderColor: '#cbd5e1',
     borderRadius: 16,
-    paddingVertical: 17,
+    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   secondaryLightBtnText: {
-    color: '#1E2530',
+    color: '#0f172a',
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
     letterSpacing: 0.1,
   },
   welcomeFooterLinks: {
