@@ -7,8 +7,10 @@ services:
     plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
       - key: PROJECT_NAME
         value: IndiRide
       - key: FOUNDER_NAME
@@ -23,6 +25,12 @@ services:
         value: /api
       - key: JWT_SECRET
         value: b63c7b80a4f5d178e24c538e1b34ad2689c47012d4d9c73efb2512a8039c2947
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 10080
+      - key: REFRESH_TOKEN_EXPIRE_DAYS
+        value: 90
       - key: DATABASE_URL
         value: postgresql://postgres:Shubham%40%23%242004@db.pfllpbmykaesyfbygbam.supabase.co:5432/postgres?sslmode=require
       - key: REDIS_URL
@@ -33,20 +41,43 @@ services:
         value: e2b14146-caa9-11f1-ac3e-0200cd936042
       - key: INITIAL_MATCHING_RADIUS_KM
         value: 2.0
+      - key: INITIAL_MATCHING_DURATION_SEC
+        value: 180
+      - key: EXPANDED_MATCHING_RADIUS_KM
+        value: 3.0
+      - key: MAX_BOOKING_TIMEOUT_SEC
+        value: 300
+      - key: RIDER_REQUEST_EXPIRY_SEC
+        value: 45
       - key: DEFAULT_BIKE_RATE_PER_KM
         value: 7.0
+      - key: DEFAULT_BULLET_RATE_PER_KM
+        value: 13.0
+      - key: DEFAULT_AUTO_RATE_PER_KM
+        value: 10.0
       - key: DEFAULT_CAR_RATE_PER_KM
         value: 15.0
+      - key: DEFAULT_CAR_PRO_RATE_PER_KM
+        value: 22.0
+      - key: MIN_FARE_BIKE
+        value: 25.0
+      - key: MIN_FARE_BULLET
+        value: 40.0
+      - key: MIN_FARE_AUTO
+        value: 40.0
+      - key: MIN_FARE_CAR
+        value: 60.0
+      - key: MIN_FARE_CAR_PRO
+        value: 90.0
 
-  # 2. IndiRide Web Frontend (React Native / Expo Web)
-  - type: static
+  # 2. IndiRide Web Frontend (React Native / Expo Web Static Site)
+  - type: web
     name: indiride-web
     runtime: static
     region: singapore
-    plan: free
     rootDir: mobile-app
     buildCommand: npm install && npm run build:web
-    publishDir: dist
+    staticPublishPath: ./dist
     routes:
       - type: rewrite
         source: /*
