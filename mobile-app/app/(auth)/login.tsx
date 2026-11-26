@@ -669,6 +669,11 @@ export default function LoginScreen() {
     window.location.hostname.startsWith('10.')
   );
 
+  // 30-Day Featured Partner Promotion Expiry (HubDwar.online)
+  // Automatically unmounts when expired: Dec 26, 2026, 23:59:59 IST
+  const HUBDWAR_PROMO_EXPIRES_AT = new Date('2026-12-26T23:59:59+05:30').getTime();
+  const isHubdwarPromoActive = Date.now() < HUBDWAR_PROMO_EXPIRES_AT;
+
   return (
     <View style={styles.outerContainer}>
       <StatusBar style="dark" />
@@ -683,6 +688,14 @@ export default function LoginScreen() {
           },
         ]}
       >
+        {/* Subtle Indian Flag Tiranga Watermark in Background (Active in Welcome, Login & Signup) */}
+        <View style={styles.tirangaWatermarkWrap} pointerEvents="none">
+          <View style={styles.watermarkBandSaffron} />
+          <View style={styles.watermarkBandWhite}>
+            <Text style={styles.watermarkChakra}>☸</Text>
+          </View>
+          <View style={styles.watermarkBandGreen} />
+        </View>
         {/* Top Play Store Coming Soon Banner */}
         <View style={styles.topAnnouncementBar}>
           <TouchableOpacity
@@ -792,32 +805,44 @@ export default function LoginScreen() {
                 </View>
               </View>
 
-              <Text style={styles.welcomeTagline}>Bihar's Smart Ride-Hailing Network</Text>
+              {/* Indian Flag Emblem & India Tagline */}
+              <View style={styles.tirangaSubHeaderRow}>
+                <View style={styles.miniFlagBadge}>
+                  <View style={styles.miniFlagSaffron} />
+                  <View style={styles.miniFlagWhite}>
+                    <Text style={styles.miniFlagChakra}>☸</Text>
+                  </View>
+                  <View style={styles.miniFlagGreen} />
+                </View>
+                <Text style={styles.welcomeTagline}>India's Smart Ride-Hailing Network</Text>
+              </View>
             </View>
 
-            {/* 1-Month Featured HubDwar Announcement Strip (Right above video) */}
-            <TouchableOpacity
-              accessibilityRole="link"
-              // @ts-ignore
-              href="https://hubdwar.online"
-              style={styles.hubdwarAnnounceBar}
-              onPress={() => {
-                if (Platform.OS === 'web' && typeof window !== 'undefined') {
-                  window.open('https://hubdwar.online', '_blank');
-                }
-              }}
-              activeOpacity={0.85}
-            >
-              <View style={styles.hubdwarAnnounceBadge}>
-                <Text style={styles.hubdwarAnnounceBadgeText}>PROMO</Text>
-              </View>
-              <Text style={styles.hubdwarAnnounceText} numberOfLines={1}>
-                🚀 <Text style={{ fontWeight: '800', color: '#1e3a8a' }}>HubDwar is live</Text> for coding interview prep, company opportunities &amp; mock tests!
-              </Text>
-              <View style={styles.hubdwarAnnounceLinkPill}>
-                <Text style={styles.hubdwarAnnounceLinkText}>hubdwar.online ➔</Text>
-              </View>
-            </TouchableOpacity>
+            {/* 1-Month Featured HubDwar Announcement Strip (Right above video - Auto-removes when expired) */}
+            {isHubdwarPromoActive && (
+              <TouchableOpacity
+                accessibilityRole="link"
+                // @ts-ignore
+                href="https://hubdwar.online"
+                style={styles.hubdwarAnnounceBar}
+                onPress={() => {
+                  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+                    window.open('https://hubdwar.online', '_blank');
+                  }
+                }}
+                activeOpacity={0.85}
+              >
+                <View style={styles.hubdwarAnnounceBadge}>
+                  <Text style={styles.hubdwarAnnounceBadgeText}>PROMO</Text>
+                </View>
+                <Text style={styles.hubdwarAnnounceText} numberOfLines={1}>
+                  🚀 <Text style={{ fontWeight: '800', color: '#1e3a8a' }}>HubDwar is live</Text> for coding interview prep, company opportunities &amp; mock tests!
+                </Text>
+                <View style={styles.hubdwarAnnounceLinkPill}>
+                  <Text style={styles.hubdwarAnnounceLinkText}>hubdwar.online ➔</Text>
+                </View>
+              </TouchableOpacity>
+            )}
 
             {/* Center Hero Video (Preserves 100% original ratio and sizing) */}
             <View
@@ -2555,11 +2580,81 @@ const styles = StyleSheet.create<any>({
       userSelect: 'none',
     } : {}),
   },
+  tirangaSubHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 6,
+  },
+  miniFlagBadge: {
+    width: 22,
+    height: 15,
+    borderRadius: 3,
+    overflow: 'hidden',
+    borderWidth: 0.8,
+    borderColor: 'rgba(0, 0, 0, 0.15)',
+    flexDirection: 'column',
+  },
+  miniFlagSaffron: {
+    flex: 1,
+    backgroundColor: '#FF671F',
+  },
+  miniFlagWhite: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  miniFlagGreen: {
+    flex: 1,
+    backgroundColor: '#046A38',
+  },
+  miniFlagChakra: {
+    fontSize: 5,
+    color: '#000080',
+    fontWeight: '900',
+    lineHeight: 6,
+  },
   welcomeTagline: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#475569',
-    fontWeight: '500',
-    marginTop: 4,
+    fontWeight: '600',
+  },
+  tirangaWatermarkWrap: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    opacity: 0.045,
+    pointerEvents: 'none',
+    zIndex: 0,
+    justifyContent: 'space-between',
+    overflow: 'hidden',
+  },
+  watermarkBandSaffron: {
+    height: '32%',
+    width: '100%',
+    backgroundColor: '#FF671F',
+  },
+  watermarkBandWhite: {
+    height: '36%',
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  watermarkBandGreen: {
+    height: '32%',
+    width: '100%',
+    backgroundColor: '#138808',
+  },
+  watermarkChakra: {
+    fontSize: 160,
+    color: '#000080',
+    opacity: 0.85,
+    lineHeight: 170,
   },
   welcomeGraphicBox: {
     width: '100%',
@@ -2629,7 +2724,7 @@ const styles = StyleSheet.create<any>({
   // Auth Form Common Views
   authViewContainer: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'transparent',
   },
   authTopNav: {
     height: 52,

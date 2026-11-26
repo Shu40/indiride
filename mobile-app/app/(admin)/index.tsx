@@ -19,9 +19,14 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '../../src/store/authStore';
 import { api } from '../../src/services/api';
 
+// 30-Day Featured Partner Promotion Expiry (HubDwar.online)
+// Auto-removes completely when expired: Dec 26, 2026, 23:59:59 IST
+const HUBDWAR_PROMO_EXPIRES_AT = new Date('2026-12-26T23:59:59+05:30').getTime();
+
 export default function AdminScreen() {
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
+  const isHubdwarPromoActive = Date.now() < HUBDWAR_PROMO_EXPIRES_AT;
 
   const [overview, setOverview] = useState<any>(null);
   const [riders, setRiders] = useState<any[]>([]);
@@ -509,51 +514,53 @@ export default function AdminScreen() {
           {/* TAB 1: OVERVIEW METRICS */}
           {activeTab === 'overview' && overview && (
             <View>
-              {/* Official 1-Month Featured Partner Banner: HubDwar.online */}
-              <View style={styles.hubdwarAdminBanner}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <View style={{ backgroundColor: '#4f46e5', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 }}>
-                      <Text style={{ fontSize: 10, fontWeight: '800', color: '#ffffff', letterSpacing: 0.5 }}>OFFICIAL PARTNERSHIP</Text>
+              {/* Official 1-Month Featured Partner Banner: HubDwar.online (Auto-removes when expired) */}
+              {isHubdwarPromoActive && (
+                <View style={styles.hubdwarAdminBanner}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <View style={{ backgroundColor: '#4f46e5', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '800', color: '#ffffff', letterSpacing: 0.5 }}>OFFICIAL PARTNERSHIP</Text>
+                      </View>
+                      <View style={{ backgroundColor: '#fef3c7', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1, borderColor: '#fde68a' }}>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#b45309' }}>ACTIVE FOR 30 DAYS</Text>
+                      </View>
                     </View>
-                    <View style={{ backgroundColor: '#fef3c7', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1, borderColor: '#fde68a' }}>
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#b45309' }}>ACTIVE FOR 30 DAYS</Text>
-                    </View>
+                    <MaterialCommunityIcons name="code-tags" size={18} color="#4f46e5" />
                   </View>
-                  <MaterialCommunityIcons name="code-tags" size={18} color="#4f46e5" />
-                </View>
 
-                <Text style={{ fontSize: 15, fontWeight: '800', color: '#1e1b4b', marginBottom: 2 }}>
-                  🚀 HubDwar (hubdwar.online) Is Live!
-                </Text>
-                <Text style={{ fontSize: 12, color: '#4338ca', lineHeight: 18, marginBottom: 10 }}>
-                  India's biggest upcoming AI career &amp; coding platform for Coding Interview Prep, AI Mock Interviews, ATS Resume Builder, and curated Company Opportunities &amp; Internships.
-                </Text>
-
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: '#4f46e5',
-                    borderRadius: 8,
-                    paddingVertical: 8,
-                    paddingHorizontal: 12,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                  }}
-                  onPress={() => {
-                    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-                      window.open('https://hubdwar.online', '_blank');
-                    }
-                  }}
-                  activeOpacity={0.88}
-                >
-                  <Ionicons name="open-outline" size={15} color="#ffffff" />
-                  <Text style={{ fontSize: 12, fontWeight: '800', color: '#ffffff' }}>
-                    Visit HubDwar.online ➔
+                  <Text style={{ fontSize: 15, fontWeight: '800', color: '#1e1b4b', marginBottom: 2 }}>
+                    🚀 HubDwar (hubdwar.online) Is Live!
                   </Text>
-                </TouchableOpacity>
-              </View>
+                  <Text style={{ fontSize: 12, color: '#4338ca', lineHeight: 18, marginBottom: 10 }}>
+                    India's biggest upcoming AI career &amp; coding platform for Coding Interview Prep, AI Mock Interviews, ATS Resume Builder, and curated Company Opportunities &amp; Internships.
+                  </Text>
+
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: '#4f46e5',
+                      borderRadius: 8,
+                      paddingVertical: 8,
+                      paddingHorizontal: 12,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                    }}
+                    onPress={() => {
+                      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+                        window.open('https://hubdwar.online', '_blank');
+                      }
+                    }}
+                    activeOpacity={0.88}
+                  >
+                    <Ionicons name="open-outline" size={15} color="#ffffff" />
+                    <Text style={{ fontSize: 12, fontWeight: '800', color: '#ffffff' }}>
+                      Visit HubDwar.online ➔
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
 
               <Text style={styles.sectionHeader}>PLATFORM METRICS</Text>
               <View style={styles.statsGrid}>
