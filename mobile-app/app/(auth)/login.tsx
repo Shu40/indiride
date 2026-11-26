@@ -104,6 +104,7 @@ export default function LoginScreen() {
   const [googleModalVisible, setGoogleModalVisible] = useState(false);
   const [googleEmailInput, setGoogleEmailInput] = useState('');
   const [googleNameInput, setGoogleNameInput] = useState('');
+  const [googleComingSoonNotice, setGoogleComingSoonNotice] = useState(false);
   const [savedGoogleAccount, setSavedGoogleAccount] = useState<{ email: string; name: string } | null>(null);
   const [pendingGoogleEmail, setPendingGoogleEmail] = useState('');
   const [pendingGoogleName, setPendingGoogleName] = useState('');
@@ -788,10 +789,16 @@ export default function LoginScreen() {
               <View style={styles.quickOptionsRow}>
                 <TouchableOpacity
                   style={styles.secondaryOptionBtn}
-                  onPress={() => setGoogleModalVisible(true)}
+                  onPress={() => {
+                    setGoogleComingSoonNotice(false);
+                    setGoogleModalVisible(true);
+                  }}
                 >
                   <Ionicons name="logo-google" size={15} color="#ea4335" />
                   <Text style={styles.secondaryOptionBtnText}>Google</Text>
+                  <View style={{ backgroundColor: '#fef3c7', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4, marginLeft: 4 }}>
+                    <Text style={{ fontSize: 9, color: '#b45309', fontWeight: '800' }}>SOON</Text>
+                  </View>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -2125,79 +2132,91 @@ export default function LoginScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Ionicons name="logo-google" size={18} color="#ea4335" />
                 <Text style={styles.modalCardTitle}>Sign in with Google</Text>
+                <View style={{ backgroundColor: '#fef3c7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, borderWidth: 1, borderColor: '#fde68a' }}>
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: '#b45309' }}>COMING SOON</Text>
+                </View>
               </View>
               <TouchableOpacity onPress={() => setGoogleModalVisible(false)}>
                 <Ionicons name="close" size={20} color="#64748b" />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.modalCardSub}>Enter or select your Google account credentials:</Text>
+            <Text style={styles.modalCardSub}>Enter your Gmail address to request verification OTP:</Text>
 
-            {savedGoogleAccount ? (
-              <View style={{ marginBottom: 14 }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: '#64748b', marginBottom: 6 }}>
-                  SAVED GOOGLE ACCOUNT:
-                </Text>
-                <TouchableOpacity
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: '#eff6ff',
-                    borderWidth: 1.5,
-                    borderColor: '#0284c7',
-                    borderRadius: 12,
-                    padding: 12,
-                    gap: 10,
-                  }}
-                  onPress={() => handleSelectGoogleAccount(savedGoogleAccount.email, savedGoogleAccount.name)}
-                >
-                  <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: '#ffffff', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name="logo-google" size={18} color="#ea4335" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: '#0f172a' }}>{savedGoogleAccount.name || 'Google Account'}</Text>
-                    <Text style={{ fontSize: 11, color: '#0369a1' }}>{savedGoogleAccount.email}</Text>
-                  </View>
-                  <Text style={{ fontSize: 11, fontWeight: '800', color: '#0284c7' }}>Direct Login ➔</Text>
-                </TouchableOpacity>
-
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 12, gap: 8 }}>
-                  <View style={{ flex: 1, height: 1, backgroundColor: '#e2e8f0' }} />
-                  <Text style={{ fontSize: 11, color: '#94a3b8' }}>or use another Google account</Text>
-                  <View style={{ flex: 1, height: 1, backgroundColor: '#e2e8f0' }} />
-                </View>
-              </View>
-            ) : null}
-
-            <Text style={styles.inputFieldLabel}>Full Name</Text>
+            <Text style={styles.inputFieldLabel}>Gmail Address</Text>
             <View style={styles.textInputBox}>
-              <TextInput
-                style={styles.textInputInside}
-                placeholder="e.g. Shubham Kumar"
-                value={googleNameInput}
-                onChangeText={setGoogleNameInput}
-              />
-            </View>
-
-            <Text style={styles.inputFieldLabel}>Email Address</Text>
-            <View style={styles.textInputBox}>
+              <Ionicons name="mail-outline" size={18} color="#64748b" style={{ marginRight: 8 }} />
               <TextInput
                 style={styles.textInputInside}
                 placeholder="yourname@gmail.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={googleEmailInput}
-                onChangeText={setGoogleEmailInput}
+                onChangeText={(t) => {
+                  setGoogleEmailInput(t);
+                  setGoogleComingSoonNotice(false);
+                }}
               />
             </View>
 
-            <TouchableOpacity
-              style={[styles.authSubmitBtn, { marginTop: 14 }]}
-              onPress={() => handleSelectGoogleAccount()}
-              disabled={loading}
-            >
-              {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.authSubmitBtnText}>Continue</Text>}
-            </TouchableOpacity>
+            {googleComingSoonNotice ? (
+              <View style={{
+                backgroundColor: '#fffbeb',
+                borderColor: '#f59e0b',
+                borderWidth: 1.5,
+                borderRadius: 12,
+                padding: 14,
+                marginTop: 14,
+              }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  <Ionicons name="lock-closed" size={16} color="#d97706" />
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: '#92400e' }}>
+                    Feature Locked • Coming Soon 🚀
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 12, color: '#78350f', lineHeight: 18 }}>
+                  Gmail OTP verification is currently locked for upcoming security release. Please use 100% verified Mobile Number OTP to access your account today!
+                </Text>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: '#10b981',
+                    borderRadius: 8,
+                    paddingVertical: 10,
+                    alignItems: 'center',
+                    marginTop: 12,
+                  }}
+                  onPress={() => {
+                    setGoogleModalVisible(false);
+                    setGoogleComingSoonNotice(false);
+                  }}
+                >
+                  <Text style={{ color: '#ffffff', fontWeight: '800', fontSize: 13 }}>Continue with Mobile Number OTP ➔</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.authSubmitBtn, { marginTop: 14, backgroundColor: '#0284c7' }]}
+                onPress={() => {
+                  const email = googleEmailInput.trim().toLowerCase();
+                  if (!email || !email.includes('@')) {
+                    Alert.alert('Invalid Gmail', 'Please enter a valid Gmail address (e.g. name@gmail.com)');
+                    return;
+                  }
+                  setGoogleComingSoonNotice(true);
+                  Alert.alert(
+                    'Feature Locked • Coming Soon 🚀',
+                    'Gmail OTP verification is currently locked for upcoming security release. Please use Mobile Number OTP to log in today!'
+                  );
+                }}
+              >
+                <Ionicons name="shield-checkmark-outline" size={17} color="#ffffff" style={{ marginRight: 6 }} />
+                <Text style={styles.authSubmitBtnText}>Verify Gmail</Text>
+              </TouchableOpacity>
+            )}
+
+            <Text style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', marginTop: 14 }}>
+              🔒 Note: For guaranteed rider &amp; passenger safety, direct mobile SMS OTP is the primary verified login method.
+            </Text>
           </View>
         </View>
       </Modal>
